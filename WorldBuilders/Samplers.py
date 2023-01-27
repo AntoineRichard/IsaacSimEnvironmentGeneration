@@ -51,12 +51,16 @@ class UniformSampler(BaseSampler):
     
     def sample_equation_based_rejection(self, num=1, **kwargs):
         points = []
-        for i in range(num):
-            check_not_ok = True
-            while check_not_ok:
-                point = [self._rng.uniform(self._sampler_cfg.min[dim], self._sampler_cfg.max[dim]) for dim in range(self._sampler_cfg.randomization_space)]
-                check_not_ok = not self._check_fn([point])[0]
-            points.append(point)
+        counter = 0
+        num_points = 0
+        while ((num_points < num) and self._sampler_cfg.max_rejection_sampling_loop > counter):
+            pts = self.sample(num)
+            correct = self._check_fn(pts)
+            if np.sum(correct) > 0:
+                num_points += np.sum(correct)
+                points.append(pts[correct])
+            counter += 1
+        points = np.concatenate(points)[:num]
         return np.array(points)
 
     def sample_image(self, num=1, **kwargs):
@@ -137,12 +141,14 @@ class NormalSampler(BaseSampler):
     def sample_equation_based_rejection(self, num=0, **kwargs):
         points = []
         num_points = 0
-        while num_points < num:
+        counter = 0
+        while ((num_points < num) and self._sampler_cfg.max_rejection_sampling_loop > counter):
             pts = self._rng.multivariate_normal(self._sampler_cfg.mean, self._sampler_cfg.std, (num))
             correct = self._check_fn(pts)
             if np.sum(correct) > 0:
                 num_points += np.sum(correct)
                 points.append(pts[correct])
+            counter += 1
         points = np.concatenate(points)[:num]
         return np.array(points)
 
@@ -392,7 +398,7 @@ class ThomasClusterSampler(BaseSampler):
 
 class HardCoreThomasClusterSampler(BaseSampler):
     # Samples points in a layer defined space using a Matern cluser point process. 
-    def __init__(self, sampler_cfg: ThomasClusterSampler_T):
+    def __init__(self, sampler_cfg: HardCoreThomasClusterSampler_T):
         super().__init__(sampler_cfg)
 
     def setMaskAndOffset(self, mask: np.ndarray, offset: tuple, resolution: float):
@@ -433,9 +439,31 @@ class HardCoreThomasClusterSampler(BaseSampler):
         correct = self._check_fn(daughter_coords)
         return daughter_coords[correct]
 
-    def sample(self, bounds=[], **kwargs):
+    def hardCoreRejection(self, daughter_coords):
+        mark_age = self._rng.uniform(0, 1, daughter_coords.shape[0])
+        boole_keep = np.zeros(daughter_coords.shape[0], dtype=bool)
+        for i in range(mark_age.shape[0]):
+            dist_tmp = np.linalg.norm(daughter_coords[i]-daughter_coords,axis=-1)
+            in_disk = (dist_tmp < self._sampler_cfg.core_radius) & (dist_tmp > 0)
+            if len(mark_age[in_disk]) == 0:
+                boole_keep[i] = True
+            else:
+                boole_keep[i] = all(mark_age[i] < mark_age[in_disk])
+        return boole_keep
+
+    def simulateProcess(self, bounds):
         parents_coords = self.getParents(bounds)
-        points = self.getDaughters(parents_coords)
+        daughter_coords = self.getDaughters(parents_coords)
+        for _ in range(self._sampler_cfg.num_repeat):
+            boole_keep = self.hardCoreRejection(daughter_coords)
+            daughter_coords=daughter_coords[boole_keep]
+            daughter_coords = np.concatenate([daughter_coords, self.getDaughters(parents_coords)])
+        boole_keep = self.hardCoreRejection(daughter_coords)
+        daughter_coords=daughter_coords[boole_keep]
+        return daughter_coords
+
+    def sample(self, bounds=[], **kwargs):
+        points = self.simulateProcess(bounds)
         return points
     
     def sample_equation_based_rejection(self, bounds=[], **kwargs):
@@ -454,12 +482,92 @@ class HardCoreThomasClusterSampler(BaseSampler):
             z = idx % self.mask.shape[2] % self.mask.shape[1]
             return np.stack([x,y,z]).T + local
 
-class PoissonClusterPointSampler:
+class PoissonPointSampler(BaseSampler):
     # Samples points in a layer defined space using a Poisson cluser point process.
-    pass
+    def __init__(self, sampler_cfg: MaternClusterPointSampler_T):
+        super().__init__(sampler_cfg)
 
-class LinearInterpolationSampler:
-    pass
+    def setMaskAndOffset(self, mask: np.ndarray, offset: tuple, resolution: float):
+        self.mask = mask.copy()
+        self.offset = np.array(offset)
+        self.resolution = resolution
+
+        pd = self.mask * 1.0
+
+        masked_pd = mask * pd
+        self.idx = np.arange(masked_pd.flatten().shape[0])
+        self.p = masked_pd / np.sum(masked_pd)
+
+    def sample(self, bounds=[], **kwargs):
+        area = np.prod(bounds[:,1] - bounds[:,0])
+        num_points_parent = self._rng.poisson(area * self._sampler_cfg.lambda_poisson)
+        coords = []
+        for i in range(bounds.shape[0]):
+            coords.append(bounds[i,0] + (bounds[i,1] - bounds[i,0]) * self._rng.uniform(0, 1, num_points_parent))
+        points = np.stack(coords).T
+        correct = self._check_fn(points)
+        return points[correct]
+    
+    def sample_equation_based_rejection(self, bounds=[], **kwargs):
+        return self.sample(bounds, **kwargs)
+
+    def sample_image(self, num):
+        idx = self._rng.choice(self.idx, p = self.p, size=num)
+        local = self._rng.uniform(0, self.resolution, size=(num,self._sampler_cfg.randomization_space))
+        if self._sampler_cfg.randomization_space == 2:
+            x = idx // self.mask.shape[1]
+            y = idx % self.mask.shape[1]
+            return np.stack([x,y]).T + local
+        if self._sampler_cfg.randomization_space == 3:
+            x = idx // self.mask.shape[2] // self.mask.shape[1]
+            y = idx // self.mask.shape[2] % self.mask[1]
+            z = idx % self.mask.shape[2] % self.mask.shape[1]
+            return np.stack([x,y,z]).T + local
+
+class LinearInterpolationSampler(BaseSampler):
+    def __init__(self, sampler_cfg: UniformSampler_T):
+        super().__init__(sampler_cfg)
+
+    def setMaskAndOffset(self, mask: np.ndarray, offset: tuple, resolution: float):
+        self.mask = mask.copy()
+        self.offset = np.array(offset)
+        self.resolution = resolution
+
+        pd = self.mask * 1.0
+
+        masked_pd = mask * pd
+        self.idx = np.arange(masked_pd.flatten().shape[0])
+        self.p = masked_pd / np.sum(masked_pd)
+
+    def sample(self, num=1, **kwargs):
+        num_per_dim = int(np.power(num, 1/self._sampler_cfg.randomization_space))
+        grids = np.meshgrid(*[np.linspace(self._sampler_cfg.min[dim], self._sampler_cfg.max[dim], num_per_dim) for dim in range(self._sampler_cfg.randomization_space)])
+        points = np.array([grid.flatten() for grid in grids]).T
+        correct = self._check_fn(points)      
+        return points[correct]
+    
+    def sample_equation_based_rejection(self, num=1, **kwargs):
+        points = []
+        for i in range(num):
+            check_not_ok = True
+            while check_not_ok:
+                point = [self._rng.uniform(self._sampler_cfg.min[dim], self._sampler_cfg.max[dim]) for dim in range(self._sampler_cfg.randomization_space)]
+                check_not_ok = not self._check_fn([point])[0]
+            points.append(point)
+        return np.array(points)
+
+    def sample_image(self, num=1, **kwargs):
+        idx = self._rng.choice(self.idx, p = self.p, size=num)
+        local = self._rng.uniform(0, self.resolution, size=(num,self._sampler_cfg.randomization_space))
+        if self._sampler_cfg.randomization_space == 2:
+            x = idx // self.mask.shape[1]
+            y = idx % self.mask.shape[1]
+            return np.stack([x,y]).T + local
+        if self._sampler_cfg.randomization_space == 3:
+            x = idx // self.mask.shape[2] // self.mask.shape[1]
+            y = idx // self.mask.shape[2] % self.mask[1]
+            z = idx % self.mask.shape[2] % self.mask.shape[1]
+            return np.stack([x,y,z]).T + local
 
 class SamplerFactory:
     def __init__(self):
@@ -480,3 +588,6 @@ Sampler_Factory.register("MaternClusterPointSampler_T", MaternClusterPointSample
 Sampler_Factory.register("HardCoreMaternClusterPointSampler_T", HardCoreMaternClusterPointSampler)
 Sampler_Factory.register("ThomasClusterSampler_T", ThomasClusterSampler)
 Sampler_Factory.register("HardCoreThomasClusterSampler_T", HardCoreThomasClusterSampler)
+Sampler_Factory.register("HardCoreThomasClusterSampler_T", HardCoreThomasClusterSampler)
+Sampler_Factory.register("PoissonPointSampler_T", PoissonPointSampler)
+Sampler_Factory.register("LinearInterpolationSampler_T", LinearInterpolationSampler)

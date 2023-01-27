@@ -141,7 +141,7 @@ class LineLayer(Layer1D):
     def __init__(self, layer_cfg: Line_T, sampler_cfg: Sampler_T) -> None:
         super().__init__(layer_cfg, sampler_cfg)
 
-        if isinstance(self._sampler_cfg, UniformSampler_T):
+        if isinstance(self._sampler_cfg, UniformSampler_T) or isinstance(self._sampler_cfg, LinearInterpolationSampler_T):
             self._sampler_cfg.randomization_space = 1
             self._sampler_cfg.min = [self._layer_cfg.xmin]
             self._sampler_cfg.max = [self._layer_cfg.xmax]
@@ -167,7 +167,7 @@ class CircleLayer(Layer1D):
     def __init__(self, layer_cfg: Circle_T, sampler_cfg: Sampler_T) -> None:
         super().__init__(layer_cfg, sampler_cfg)
 
-        if isinstance(self._sampler_cfg, UniformSampler_T):
+        if isinstance(self._sampler_cfg, UniformSampler_T) or isinstance(self._sampler_cfg, LinearInterpolationSampler_T):
             self._sampler_cfg.randomization_space = 1
             self._sampler_cfg.min = [self._layer_cfg.theta_min]
             self._sampler_cfg.max = [self._layer_cfg.theta_max]
@@ -210,7 +210,7 @@ class PlaneLayer(Layer2D):
         super().__init__(layer_cfg, sampler_cfg)
 
 
-        if isinstance(self._sampler_cfg, UniformSampler_T):
+        if isinstance(self._sampler_cfg, UniformSampler_T) or isinstance(self._sampler_cfg, LinearInterpolationSampler_T):
             self._sampler_cfg.randomization_space = 2
             self._sampler_cfg.min = [self._layer_cfg.xmin, self._layer_cfg.ymin]
             self._sampler_cfg.max = [self._layer_cfg.xmax, self._layer_cfg.ymax]
@@ -240,7 +240,7 @@ class DiskLayer(Layer2D):
     def __init__(self, layer_cfg: Disk_T, sampler_cfg: Sampler_T) -> None:
         super().__init__(layer_cfg, sampler_cfg)
 
-        if isinstance(self._sampler_cfg, UniformSampler_T):
+        if isinstance(self._sampler_cfg, UniformSampler_T) or isinstance(self._sampler_cfg, LinearInterpolationSampler_T):
             self._sampler_cfg.randomization_space = 2
             self._sampler_cfg.min = [self._layer_cfg.theta_min, self._layer_cfg.radius_min**2]
             self._sampler_cfg.max = [self._layer_cfg.theta_max, self._layer_cfg.radius_max**2]
@@ -272,7 +272,7 @@ class CubeLayer(Layer3D):
     def __init__(self, layer_cfg: Cube_T, sampler_cfg: Sampler_T) -> None:
         super().__init__(layer_cfg, sampler_cfg)
 
-        if isinstance(self._sampler_cfg, UniformSampler_T):
+        if isinstance(self._sampler_cfg, UniformSampler_T) or isinstance(self._sampler_cfg, LinearInterpolationSampler_T):
             self._sampler_cfg.randomization_space = 3
             self._sampler_cfg.min = [self._layer_cfg.xmin, self._layer_cfg.ymin, self._layer_cfg.zmin]
             self._sampler_cfg.max = [self._layer_cfg.xmax, self._layer_cfg.ymax, self._layer_cfg.zmax]
@@ -304,7 +304,7 @@ class SphereLayer(Layer3D):
     def __init__(self, layer_cfg: Sphere_T, sampler_cfg: Sampler_T) -> None:
         super().__init__(layer_cfg, sampler_cfg)
 
-        if isinstance(self._sampler_cfg, UniformSampler_T):
+        if isinstance(self._sampler_cfg, UniformSampler_T) or isinstance(self._sampler_cfg, LinearInterpolationSampler_T):
             self._sampler_cfg.randomization_space = 3
             self._sampler_cfg.min = [self._layer_cfg.theta_min, self._layer_cfg.phi_min, self._layer_cfg.radius_min**2]
             self._sampler_cfg.max = [self._layer_cfg.theta_max, self._layer_cfg.phi_max, self._layer_cfg.radius_max**2]

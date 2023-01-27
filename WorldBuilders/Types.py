@@ -244,6 +244,7 @@ class Sampler_T:
     use_rejection_sampling: bool = False
     use_image_sampling: bool = False
     seed: int = -1
+    max_rejection_sampling_loop: int = 5
 
     def __post_init__(self):
         assert self.randomization_space > 0, "randomization_space must be larger than 0."
@@ -294,7 +295,7 @@ class HardCoreMaternClusterPointSampler_T(Sampler_T):
     lambda_daughter: int = 100  # mean number of points in each cluster
     cluster_radius: float = 0.1  # radius of cluster disk (for daughter points) 
     core_radius: float = 0.02
-    num_repeat: int = 1
+    num_repeat: int = 0
 
     def __post_init__(self):
         super().__post_init__()
@@ -305,9 +306,40 @@ class HardCoreMaternClusterPointSampler_T(Sampler_T):
 class ThomasClusterSampler_T(Sampler_T):
     lambda_parent: int = 10  # density of parent Poisson point process
     lambda_daughter: int = 100  # mean number of points in each cluster
-    sigma: float = 0.05  # radius of cluster disk (for daughter points) 
+    sigma: float = 0.05
 
     def __post_init__(self):
         super().__post_init__()
         assert type(self.lambda_parent) is int, "lambda_parent must be an int."
         assert type(self.lambda_daughter) is int, "lambda_daughter must be an int."
+
+@dataclasses.dataclass
+class HardCoreThomasClusterSampler_T(Sampler_T):
+    lambda_parent: int = 10  # density of parent Poisson point process
+    lambda_daughter: int = 100  # mean number of points in each cluster
+    sigma: float = 0.05 
+    core_radius: float = 0.02
+    num_repeat: int = 0
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert type(self.lambda_parent) is int, "lambda_parent must be an int."
+        assert type(self.lambda_daughter) is int, "lambda_daughter must be an int."
+
+@dataclasses.dataclass
+class PoissonPointSampler_T(Sampler_T):
+    lambda_poisson: int = 100  # density of parent Poisson point process
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert type(self.lambda_poisson) is int, "lambda_poisson must be an int."
+
+@dataclasses.dataclass
+class LinearInterpolationSampler_T(Sampler_T):
+    min: tuple = ()
+    max: tuple = ()
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert type(self.min) is tuple, "min must be a tuple."
+        assert type(self.max) is tuple, "max must be a tuple."
