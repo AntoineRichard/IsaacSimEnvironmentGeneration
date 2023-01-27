@@ -247,8 +247,8 @@ norm2 = NormalSampler_T(mean=(0.5,0.5), std=(0.05, 0.1, 0.1, 0.05), randomizatio
 norm3 = NormalSampler_T(mean=(0.5,0.5,0.5), std=(0.05, 0., 0., 0., 0.1, 0, 0., 0., 0.05), randomization_space=3, use_rejection_sampling=True)
 
 norm1c = NormalSampler_T(mean=(np.pi,), std=(np.pi/8,), randomization_space=1, use_rejection_sampling=True)
-norm2c = NormalSampler_T(mean=(np.pi, 0.25), std=(np.pi/8,0,0,0.02), randomization_space=2, use_rejection_sampling=True)
-norm3c = NormalSampler_T(mean=(np.pi, np.pi, 0.25), std=(np.pi/8,0,0,0,np.pi/8,0,0,0,0.02), randomization_space=3, use_rejection_sampling=True)
+norm2c = NormalSampler_T(mean=(0.25, np.pi), std=(0.02,0,0,np.pi/8), randomization_space=2, use_rejection_sampling=True)
+norm3c = NormalSampler_T(mean=(0.25, np.pi, np.pi), std=(0.02,0,0,0,np.pi/8,0,0,0,np.pi/8), randomization_space=3, use_rejection_sampling=True)
 
 matern2 = MaternClusterPointSampler_T(lambda_parent=10, lambda_daughter=100, cluster_radius=0.1, randomization_space=2, use_rejection_sampling=False)
 matern3 = MaternClusterPointSampler_T(lambda_parent=10, lambda_daughter=100, cluster_radius=0.1, randomization_space=3, use_rejection_sampling=False)

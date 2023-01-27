@@ -149,6 +149,7 @@ class NormalSampler(BaseSampler):
                 num_points += np.sum(correct)
                 points.append(pts[correct])
             counter += 1
+            print(pts)
         points = np.concatenate(points)[:num]
         return np.array(points)
 
@@ -182,11 +183,14 @@ class MaternClusterPointSampler(BaseSampler):
         self.idx = np.arange(masked_pd.flatten().shape[0])
         self.p = masked_pd / np.sum(masked_pd)
 
-    def getParents(self, bounds):
+    def getParents(self, bounds, area=None):
         bounds_ext = np.array(bounds)
         bounds_ext[:,0] -= self._sampler_cfg.cluster_radius
         bounds_ext[:,1] += self._sampler_cfg.cluster_radius
-        area_ext = np.prod(bounds_ext[:,1] - bounds_ext[:,0])
+        if area is None:
+            area_ext = np.prod(bounds_ext[:,1] - bounds_ext[:,0])
+        else:
+            area_ext = area
         num_points_parent = self._rng.poisson(area_ext * self._sampler_cfg.lambda_parent)
         coords = []
         for i in range(bounds_ext.shape[0]):
@@ -216,8 +220,8 @@ class MaternClusterPointSampler(BaseSampler):
         correct = self._check_fn(daughter_coords)
         return daughter_coords[correct]
 
-    def sample(self, bounds=[], **kwargs):
-        parents_coords = self.getParents(bounds)
+    def sample(self, bounds=[], area=None, **kwargs):
+        parents_coords = self.getParents(bounds, area=area)
         points = self.getDaughters(parents_coords)
         return points
     
@@ -253,11 +257,14 @@ class HardCoreMaternClusterPointSampler(BaseSampler):
         self.idx = np.arange(masked_pd.flatten().shape[0])
         self.p = masked_pd / np.sum(masked_pd)
 
-    def getParents(self, bounds):
+    def getParents(self, bounds, area=None):
         bounds_ext = np.array(bounds)
         bounds_ext[:,0] -= self._sampler_cfg.cluster_radius
         bounds_ext[:,1] += self._sampler_cfg.cluster_radius
-        area_ext = np.prod(bounds_ext[:,1] - bounds_ext[:,0])
+        if area is None:
+            area_ext = np.prod(bounds_ext[:,1] - bounds_ext[:,0])
+        else:
+            area_ext = area
         num_points_parent = self._rng.poisson(area_ext * self._sampler_cfg.lambda_parent)
         coords = []
         for i in range(bounds_ext.shape[0]):
@@ -299,8 +306,8 @@ class HardCoreMaternClusterPointSampler(BaseSampler):
                 boole_keep[i] = all(mark_age[i] < mark_age[in_disk])
         return boole_keep
 
-    def simulateProcess(self, bounds):
-        parents_coords = self.getParents(bounds)
+    def simulateProcess(self, bounds, area=None):
+        parents_coords = self.getParents(bounds, area)
         daughter_coords = self.getDaughters(parents_coords)
         for _ in range(self._sampler_cfg.num_repeat):
             boole_keep = self.hardCoreRejection(daughter_coords)
@@ -312,8 +319,8 @@ class HardCoreMaternClusterPointSampler(BaseSampler):
         return daughter_coords
 
 
-    def sample(self, bounds=[], **kwargs):
-        points = self.simulateProcess(bounds)
+    def sample(self, bounds=[], area=None, **kwargs):
+        points = self.simulateProcess(bounds, area=area)
         return points
     
     def sample_equation_based_rejection(self, bounds=[], **kwargs):
@@ -348,11 +355,14 @@ class ThomasClusterSampler(BaseSampler):
         self.idx = np.arange(masked_pd.flatten().shape[0])
         self.p = masked_pd / np.sum(masked_pd)
 
-    def getParents(self, bounds):
+    def getParents(self, bounds, area=None):
         bounds_ext = np.array(bounds)
         bounds_ext[:,0] -= self._sampler_cfg.sigma*6
         bounds_ext[:,1] += self._sampler_cfg.sigma*6
-        area_ext = np.prod(bounds_ext[:,1] - bounds_ext[:,0])
+        if area is None:
+            area_ext = np.prod(bounds_ext[:,1] - bounds_ext[:,0])
+        else:
+            area_ext = area
         num_points_parent = self._rng.poisson(area_ext * self._sampler_cfg.lambda_parent)
         coords = []
         for i in range(bounds_ext.shape[0]):
@@ -375,8 +385,8 @@ class ThomasClusterSampler(BaseSampler):
         correct = self._check_fn(daughter_coords)
         return daughter_coords[correct]
 
-    def sample(self, bounds=[], **kwargs):
-        parents_coords = self.getParents(bounds)
+    def sample(self, bounds=[], area=None, **kwargs):
+        parents_coords = self.getParents(bounds, area=area)
         points = self.getDaughters(parents_coords)
         return points
     
@@ -412,11 +422,14 @@ class HardCoreThomasClusterSampler(BaseSampler):
         self.idx = np.arange(masked_pd.flatten().shape[0])
         self.p = masked_pd / np.sum(masked_pd)
 
-    def getParents(self, bounds):
+    def getParents(self, bounds, area=None):
         bounds_ext = np.array(bounds)
         bounds_ext[:,0] -= self._sampler_cfg.sigma*6
         bounds_ext[:,1] += self._sampler_cfg.sigma*6
-        area_ext = np.prod(bounds_ext[:,1] - bounds_ext[:,0])
+        if area is None:
+            area_ext = np.prod(bounds_ext[:,1] - bounds_ext[:,0])
+        else:
+            area_ext = area
         num_points_parent = self._rng.poisson(area_ext * self._sampler_cfg.lambda_parent)
         coords = []
         for i in range(bounds_ext.shape[0]):
@@ -451,8 +464,8 @@ class HardCoreThomasClusterSampler(BaseSampler):
                 boole_keep[i] = all(mark_age[i] < mark_age[in_disk])
         return boole_keep
 
-    def simulateProcess(self, bounds):
-        parents_coords = self.getParents(bounds)
+    def simulateProcess(self, bounds, area=None):
+        parents_coords = self.getParents(bounds, area=area)
         daughter_coords = self.getDaughters(parents_coords)
         for _ in range(self._sampler_cfg.num_repeat):
             boole_keep = self.hardCoreRejection(daughter_coords)
@@ -462,8 +475,8 @@ class HardCoreThomasClusterSampler(BaseSampler):
         daughter_coords=daughter_coords[boole_keep]
         return daughter_coords
 
-    def sample(self, bounds=[], **kwargs):
-        points = self.simulateProcess(bounds)
+    def sample(self, bounds=[], area=None, **kwargs):
+        points = self.simulateProcess(bounds, area=area)
         return points
     
     def sample_equation_based_rejection(self, bounds=[], **kwargs):
@@ -498,8 +511,9 @@ class PoissonPointSampler(BaseSampler):
         self.idx = np.arange(masked_pd.flatten().shape[0])
         self.p = masked_pd / np.sum(masked_pd)
 
-    def sample(self, bounds=[], **kwargs):
-        area = np.prod(bounds[:,1] - bounds[:,0])
+    def sample(self, bounds=[], area=None, **kwargs):
+        if area is None:
+            area = np.prod(bounds[:,1] - bounds[:,0])
         num_points_parent = self._rng.poisson(area * self._sampler_cfg.lambda_poisson)
         coords = []
         for i in range(bounds.shape[0]):
@@ -508,8 +522,8 @@ class PoissonPointSampler(BaseSampler):
         correct = self._check_fn(points)
         return points[correct]
     
-    def sample_equation_based_rejection(self, bounds=[], **kwargs):
-        return self.sample(bounds, **kwargs)
+    def sample_equation_based_rejection(self, bounds=[], area=None, **kwargs):
+        return self.sample(bounds, area=area, **kwargs)
 
     def sample_image(self, num):
         idx = self._rng.choice(self.idx, p = self.p, size=num)
@@ -578,7 +592,7 @@ class SamplerFactory:
         
     def get(self, cfg: Sampler_T, **kwargs:dict) -> BaseSampler:
         if cfg.__class__.__name__ not in self.creators.keys():
-            raise ValueError("Unknown randomizer requested.")
+            raise ValueError("Unknown sampler requested.")
         return self.creators[cfg.__class__.__name__](cfg)
 
 Sampler_Factory = SamplerFactory()

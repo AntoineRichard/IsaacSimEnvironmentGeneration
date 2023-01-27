@@ -139,6 +139,7 @@ class Disk_T(Layer_T):
     alpha: float = 1
     beta: float = 1
     output_space: int = 2
+    use_cartesian_space = False
 
     def __post_init__(self):
         super().__post_init__()
@@ -185,6 +186,7 @@ class Sphere_T(Layer_T):
     ceta: float = 1
     output_space: int = 3
     transform: Transformation3D_T = None
+    use_cartesian_space = False
 
     def __post_init__(self):
         super().__post_init__()
@@ -234,7 +236,7 @@ class Cylinder_T(Layer_T):
 
 ##################################
 #                                #
-#             SAMPLER            # 
+#            SAMPLERS            # 
 #                                #
 ##################################
 
@@ -332,7 +334,7 @@ class PoissonPointSampler_T(Sampler_T):
 
     def __post_init__(self):
         super().__post_init__()
-        assert type(self.lambda_poisson) is int, "lambda_poisson must be an int."
+        assert type(self.lambda_poisson) is int, "lambda_poisson must be an int.    use_cartesian_space = False"
 
 @dataclasses.dataclass
 class LinearInterpolationSampler_T(Sampler_T):
