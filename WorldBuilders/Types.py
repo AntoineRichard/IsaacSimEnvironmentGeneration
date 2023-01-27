@@ -277,13 +277,35 @@ class NormalSampler_T(Sampler_T):
         else:
             self.std = np.array(self.std).reshape(self.randomization_space,self.randomization_space)
 
-
-
 @dataclasses.dataclass
 class MaternClusterPointSampler_T(Sampler_T):
     lambda_parent: int = 10  # density of parent Poisson point process
     lambda_daughter: int = 100  # mean number of points in each cluster
     cluster_radius: float = 0.1  # radius of cluster disk (for daughter points) 
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert type(self.lambda_parent) is int, "lambda_parent must be an int."
+        assert type(self.lambda_daughter) is int, "lambda_daughter must be an int."
+
+@dataclasses.dataclass
+class HardCoreMaternClusterPointSampler_T(Sampler_T):
+    lambda_parent: int = 10  # density of parent Poisson point process
+    lambda_daughter: int = 100  # mean number of points in each cluster
+    cluster_radius: float = 0.1  # radius of cluster disk (for daughter points) 
+    core_radius: float = 0.02
+    num_repeat: int = 1
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert type(self.lambda_parent) is int, "lambda_parent must be an int."
+        assert type(self.lambda_daughter) is int, "lambda_daughter must be an int."
+
+@dataclasses.dataclass
+class ThomasClusterSampler_T(Sampler_T):
+    lambda_parent: int = 10  # density of parent Poisson point process
+    lambda_daughter: int = 100  # mean number of points in each cluster
+    sigma: float = 0.05  # radius of cluster disk (for daughter points) 
 
     def __post_init__(self):
         super().__post_init__()

@@ -96,12 +96,9 @@ class BaseLayer:
         if self._skip_transform:
             return points
         else:
-            print(self._T)
             ones = np.ones([points.shape[0],1])
             points = np.concatenate([points,ones],axis=-1)
-            print(points[:5,:3])
             proj = np.matmul(self._T,points.T).T[:,:-1]
-            print(proj[:5])
             return proj
 
     def sample(self, num: int):
