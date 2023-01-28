@@ -1,14 +1,15 @@
 import numpy as np
 from Types import *
 from Samplers import *
+import copy
 
 class BaseLayer:
     def __init__(self, layer_cfg: Layer_T, sampler_cfg: Sampler_T, **kwarg) -> None:
         self._randomizer = None
         self._randomization_space = None
 
-        self._sampler_cfg = sampler_cfg
-        self._layer_cfg = layer_cfg
+        self._sampler_cfg = copy.copy(sampler_cfg)
+        self._layer_cfg = copy.copy(layer_cfg)
 
         if self._layer_cfg.output_space == self._sampler_cfg.randomization_space:
             self._skip_projection = True
@@ -185,8 +186,8 @@ class CircleLayer(Layer1D):
             self._skip_projection = False
 
     def checkBoundaries(self, points):
-        b1 = points[:,0] > self._layer_cfg.theta_min
-        b2 = points[:,0] < self._layer_cfg.theta_max
+        b1 = points[:,0] >= self._layer_cfg.theta_min
+        b2 = points[:,0] <= self._layer_cfg.theta_max
         return b1*b2
 
     def getBounds(self):
@@ -246,22 +247,29 @@ class DiskLayer(Layer2D):
 
         if isinstance(self._sampler_cfg, UniformSampler_T) or isinstance(self._sampler_cfg, LinearInterpolationSampler_T):
             self._sampler_cfg.randomization_space = 2
-            self._sampler_cfg.min = [self._layer_cfg.radius_min**2, self._layer_cfg.theta_min]
-            self._sampler_cfg.max = [self._layer_cfg.radius_max**2, self._layer_cfg.theta_max]
+            self._sampler_cfg.min = [0.0, 0.0]
+            self._sampler_cfg.max = [1.0, 1.0]
+        elif isinstance(self._sampler_cfg, NormalSampler_T):
+            tmp1 = (self._sampler_cfg.mean[0] - self._layer_cfg.radius_min) / (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
+            tmp2 = (self._sampler_cfg.mean[1] - self._layer_cfg.theta_min) / (self._layer_cfg.theta_max - self._layer_cfg.theta_min)
+            self._sampler_cfg.mean = np.array([tmp1, tmp2])
+            tmp1 = self._sampler_cfg.std[0,0] / (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
+            tmp2 = self._sampler_cfg.std[1,1] / (self._layer_cfg.theta_max - self._layer_cfg.theta_min)
+            self._sampler_cfg.std = np.array([[tmp1, 0],[0, tmp2]])
 
         self.initializeSampler()
         self._sampler._check_fn = self.checkBoundaries
 
     def checkBoundaries(self, points):
-        b1 = points[:,0] > self._layer_cfg.radius_min**2
-        b2 = points[:,0] < self._layer_cfg.radius_max**2
-        b3 = points[:,1] > self._layer_cfg.theta_min
-        b4 = points[:,1] < self._layer_cfg.theta_max
+        b1 = points[:,0] >= 0.0
+        b2 = points[:,0] <= 1.0
+        b3 = points[:,1] >= 0.0
+        b4 = points[:,1] <= 1.0
         return b1*b2*b3*b4
 
     def getBounds(self):
-        self._bounds = np.array([[self._layer_cfg.radius_min**2, self._layer_cfg.radius_max**2],
-                                [self._layer_cfg.theta_min, self._layer_cfg.theta_max]])
+        self._bounds = np.array([[0.0, 1.0],
+                                [0.0, 1.0]])
         self._area = (self._layer_cfg.theta_max - self._layer_cfg.theta_min) * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)**2
 
     def createMask(self):
@@ -269,8 +277,12 @@ class DiskLayer(Layer2D):
 
     def sample(self, num):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
-        x = self._layer_cfg.center[0] + np.cos(rand[:,1])*np.sqrt(rand[:,0])*self._layer_cfg.alpha
-        y = self._layer_cfg.center[1] + np.sin(rand[:,1])*np.sqrt(rand[:,0])*self._layer_cfg.beta
+
+        r = self._layer_cfg.radius_min + np.sqrt(rand[:,0]) * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
+        t = self._layer_cfg.theta_min + rand[:,1] * (self._layer_cfg.theta_max - self._layer_cfg.theta_min)
+
+        x = self._layer_cfg.center[0] + np.cos(t)*r*self._layer_cfg.alpha
+        y = self._layer_cfg.center[1] + np.sin(t)*r*self._layer_cfg.beta
         return np.stack([x,y]).T
 
 class CubeLayer(Layer3D):
@@ -311,25 +323,34 @@ class SphereLayer(Layer3D):
 
         if isinstance(self._sampler_cfg, UniformSampler_T) or isinstance(self._sampler_cfg, LinearInterpolationSampler_T):
             self._sampler_cfg.randomization_space = 3
-            self._sampler_cfg.min = [self._layer_cfg.radius_min**2, self._layer_cfg.theta_min, self._layer_cfg.phi_min]
-            self._sampler_cfg.max = [self._layer_cfg.radius_max**2, self._layer_cfg.theta_max, self._layer_cfg.phi_max]
+            self._sampler_cfg.min = [0,0,0]
+            self._sampler_cfg.max = [1,1,1]
+        elif isinstance(self._sampler_cfg, NormalSampler_T):
+            tmp1 = (self._sampler_cfg.mean[0] - self._layer_cfg.radius_min) / (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
+            tmp2 = (self._sampler_cfg.mean[1] - self._layer_cfg.phi_min) / (self._layer_cfg.phi_max - self._layer_cfg.phi_min)
+            tmp3 = (self._sampler_cfg.mean[2] - self._layer_cfg.theta_min) / (self._layer_cfg.theta_max - self._layer_cfg.theta_min)
+            self._sampler_cfg.mean = np.array([tmp1, tmp2, tmp3])
+            tmp1 = self._sampler_cfg.std[0,0] / (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
+            tmp2 = self._sampler_cfg.std[1,1] / (self._layer_cfg.phi_max - self._layer_cfg.phi_min)
+            tmp3 = self._sampler_cfg.std[2,2] / (self._layer_cfg.theta_max - self._layer_cfg.theta_min)
+            self._sampler_cfg.std = np.array([[tmp1, 0, 0],[0, tmp2, 0],[0, 0, tmp3]])
 
         self.initializeSampler()
         self._sampler._check_fn = self.checkBoundaries
 
     def checkBoundaries(self, points):
-        b1 = points[:,0] > self._layer_cfg.radius_min**2
-        b2 = points[:,0] < self._layer_cfg.radius_max**2
-        b3 = points[:,1] > self._layer_cfg.theta_min
-        b4 = points[:,1] < self._layer_cfg.theta_max
-        b5 = points[:,2] > self._layer_cfg.phi_min
-        b6 = points[:,2] < self._layer_cfg.phi_max
+        b1 = points[:,0] >= 0.0
+        b2 = points[:,0] <= 1.0
+        b3 = points[:,1] >= 0.0
+        b4 = points[:,1] <= 1.0
+        b5 = points[:,2] >= 0.0
+        b6 = points[:,2] <= 1.0
         return b1*b2*b3*b4*b5*b6
 
     def getBounds(self):
-        self._bounds = np.array([[self._layer_cfg.radius_min**2, self._layer_cfg.radius_max**2],
-                                [self._layer_cfg.theta_min, self._layer_cfg.theta_max],
-                                [self._layer_cfg.phi_min, self._layer_cfg.phi_max]])
+        self._bounds = np.array([[0.0, 1.0],
+                                [0.0, 1.0],
+                                [0.0, 1.0]])
         self._area = (self._layer_cfg.theta_max - self._layer_cfg.theta_min) * (self._layer_cfg.phi_max - self._layer_cfg.phi_min) * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)**2
 
     def createMask(self):
@@ -337,9 +358,14 @@ class SphereLayer(Layer3D):
 
     def sample(self, num):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
-        x = self._layer_cfg.center[0] + np.sin(rand[:,2])*np.cos(rand[:,1])*np.sqrt(rand[:,0])*self._layer_cfg.alpha
-        y = self._layer_cfg.center[1] + np.sin(rand[:,2])*np.sin(rand[:,1])*np.sqrt(rand[:,0])*self._layer_cfg.beta
-        z = self._layer_cfg.center[2] + np.cos(rand[:,2])*np.sqrt(rand[:,0])*self._layer_cfg.ceta
+
+        r = self._layer_cfg.radius_min + np.sqrt(rand[:,0]) * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
+        t = self._layer_cfg.theta_min + rand[:,1] * (self._layer_cfg.theta_max - self._layer_cfg.theta_min)
+        p = self._layer_cfg.phi_min + rand[:,2] * (self._layer_cfg.phi_max - self._layer_cfg.phi_min)
+
+        x = self._layer_cfg.center[0] + np.sin(p)*np.cos(t)*r*self._layer_cfg.alpha
+        y = self._layer_cfg.center[1] + np.sin(p)*np.sin(t)*r*self._layer_cfg.beta
+        z = self._layer_cfg.center[2] + np.cos(p)*r*self._layer_cfg.ceta
         return np.stack([x,y,z]).T
 
 class CylinderLayer(Layer3D):
@@ -348,25 +374,34 @@ class CylinderLayer(Layer3D):
 
         if isinstance(self._sampler_cfg, UniformSampler_T) or isinstance(self._sampler_cfg, LinearInterpolationSampler_T):
             self._sampler_cfg.randomization_space = 3
-            self._sampler_cfg.min = [self._layer_cfg.radius_min**2, self._layer_cfg.height_min, self._layer_cfg.theta_min]
-            self._sampler_cfg.max = [self._layer_cfg.radius_max**2, self._layer_cfg.height_max, self._layer_cfg.theta_max]
+            self._sampler_cfg.min = [0.0, 0.0, 0.0]
+            self._sampler_cfg.max = [1.0, 1.0, 1.0]
+        elif isinstance(self._sampler_cfg, NormalSampler_T):
+            tmp1 = (self._sampler_cfg.mean[0] - self._layer_cfg.radius_min) / (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
+            tmp2 = (self._sampler_cfg.mean[1] - self._layer_cfg.height_min) / (self._layer_cfg.height_max - self._layer_cfg.height_min)
+            tmp3 = (self._sampler_cfg.mean[2] - self._layer_cfg.theta_min) / (self._layer_cfg.theta_max - self._layer_cfg.theta_min)
+            self._sampler_cfg.mean = np.array([tmp1, tmp2, tmp3])
+            tmp1 = self._sampler_cfg.std[0,0] / (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
+            tmp2 = self._sampler_cfg.std[1,1] / (self._layer_cfg.height_max - self._layer_cfg.height_min)
+            tmp3 = self._sampler_cfg.std[2,2] / (self._layer_cfg.theta_max - self._layer_cfg.theta_min)
+            self._sampler_cfg.std = np.array([[tmp1, 0, 0],[0, tmp2, 0],[0, 0, tmp3]])
 
         self.initializeSampler()
         self._sampler._check_fn = self.checkBoundaries
 
     def checkBoundaries(self, points):
-        b1 = points[:,0] > self._layer_cfg.radius_min**2
-        b2 = points[:,0] < self._layer_cfg.radius_max**2
-        b3 = points[:,1] > self._layer_cfg.height_min
-        b4 = points[:,1] < self._layer_cfg.height_max
-        b5 = points[:,2] > self._layer_cfg.theta_min
-        b6 = points[:,2] < self._layer_cfg.theta_max
+        b1 = points[:,0] >= 0.0
+        b2 = points[:,0] <= 1.0
+        b3 = points[:,1] >= 0.0
+        b4 = points[:,1] <= 1.0
+        b5 = points[:,2] >= 0.0
+        b6 = points[:,2] <= 1.0
         return b1*b2*b3*b4*b5*b6
 
     def getBounds(self):
-        self._bounds = np.array([[self._layer_cfg.radius_min**2, self._layer_cfg.radius_max**2],
-                                [self._layer_cfg.height_min, self._layer_cfg.height_max],
-                                [self._layer_cfg.theta_min, self._layer_cfg.theta_max]])
+        self._bounds = np.array([[0.0, 1.0],
+                                [0.0, 1.0],
+                                [0.0, 1.0]])
         self._area = (self._layer_cfg.theta_max - self._layer_cfg.theta_min) * (self._layer_cfg.height_max - self._layer_cfg.height_min) * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)**2
 
     def createMask(self):
@@ -374,15 +409,71 @@ class CylinderLayer(Layer3D):
 
     def sample(self, num):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
-        x = self._layer_cfg.center[0] + np.cos(rand[:,2])*np.sqrt(rand[:,0])*self._layer_cfg.alpha
-        y = self._layer_cfg.center[1] + np.sin(rand[:,2])*np.sqrt(rand[:,0])*self._layer_cfg.beta
-        z = rand[:,2]
+
+        r = self._layer_cfg.radius_min + (self._layer_cfg.radius_max - self._layer_cfg.radius_min)*np.sqrt(rand[:,0])
+        h = self._layer_cfg.height_min + (self._layer_cfg.height_max - self._layer_cfg.height_min)*rand[:,1]
+        theta = np.pi*2*rand[:,2]
+
+        x = self._layer_cfg.center[0] + np.cos(theta)*r*self._layer_cfg.alpha
+        y = self._layer_cfg.center[1] + np.sin(theta)*r*self._layer_cfg.beta
+        z = h
+        return np.stack([x,y,z]).T
+
+class ConeLayer(Layer3D):
+    def __init__(self, layer_cfg: Cone_T, sampler_cfg: Sampler_T) -> None:
+        super().__init__(layer_cfg, sampler_cfg)
+
+        if isinstance(self._sampler_cfg, UniformSampler_T) or isinstance(self._sampler_cfg, LinearInterpolationSampler_T):
+            self._sampler_cfg.randomization_space = 3
+            self._sampler_cfg.min = [0.0, 0.0, 0.0]
+            self._sampler_cfg.max = [1.0, 1.0, 1.0]
+        elif isinstance(self._sampler_cfg, NormalSampler_T):
+            tmp1 = (self._sampler_cfg.mean[0] - self._layer_cfg.radius_min) / (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
+            tmp2 = (self._sampler_cfg.mean[1] - self._layer_cfg.height_min) / (self._layer_cfg.height_max - self._layer_cfg.height_min)
+            tmp3 = (self._sampler_cfg.mean[2] - self._layer_cfg.theta_min) / (self._layer_cfg.theta_max - self._layer_cfg.theta_min)
+            self._sampler_cfg.mean = np.array([tmp1, tmp2, tmp3])
+            tmp1 = self._sampler_cfg.std[0,0] / (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
+            tmp2 = self._sampler_cfg.std[1,1] / (self._layer_cfg.height_max - self._layer_cfg.height_min)
+            tmp3 = self._sampler_cfg.std[2,2] / (self._layer_cfg.theta_max - self._layer_cfg.theta_min)
+            self._sampler_cfg.std = np.array([[tmp1, 0, 0],[0, tmp2, 0],[0, 0, tmp3]])
+
+
+        self.initializeSampler()
+        self._sampler._check_fn = self.checkBoundaries
+
+    def checkBoundaries(self, points):
+        b1 = points[:,0] >= 0.0
+        b2 = points[:,0] <= 1.0
+        b3 = points[:,1] >= 0.0
+        b4 = points[:,1] <= 1.0
+        b5 = points[:,2] >= 0.0
+        b6 = points[:,2] <= 1.0
+        return b1*b2*b3*b4*b5*b6
+
+    def getBounds(self):
+        self._bounds = np.array([[0.0, 1.0],
+                                [0.0, 1.0],
+                                [0.0, 1.0]])
+        self._area = (1/6)*(self._layer_cfg.theta_max - self._layer_cfg.theta_min) * (self._layer_cfg.height_max - self._layer_cfg.height_min) * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)**2
+
+    def createMask(self):
+        pass
+
+    def sample(self, num):
+        rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
+
+        r = self._layer_cfg.radius_min + (self._layer_cfg.radius_max - self._layer_cfg.radius_min)*np.sqrt(rand[:,0])
+        h = np.power(rand[:,1],1/3)
+        theta = np.pi*2*rand[:,2]
+
+        x = self._layer_cfg.center[0] + np.cos(theta)*r*h*self._layer_cfg.alpha
+        y = self._layer_cfg.center[1] + np.sin(theta)*r*h*self._layer_cfg.beta
+        z = self._layer_cfg.center[2] + self._layer_cfg.height_min +  h*(self._layer_cfg.height_max - self._layer_cfg.height_min)
         return np.stack([x,y,z]).T
 
 #class ImageLayer(Layer2D):
 #    def __init__(self, layer_cfg: Image_T, sampler_cfg: Sampler_T) -> None:
 #        super().__init__(layer_cfg, sampler_cfg)
-
 
 class LayerFactory:
     def __init__(self):
@@ -404,7 +495,7 @@ Layer_Factory.register("Disk_T", DiskLayer)
 Layer_Factory.register("Cube_T", CubeLayer)
 Layer_Factory.register("Sphere_T", SphereLayer)
 Layer_Factory.register("Cylinder_T", CylinderLayer)
-#Layer_Factory.register("Torus_T", ConeLayer)
+Layer_Factory.register("Torus_T", ConeLayer)
 #Layer_Factory.register("Cone_T", TorusLayer)
 
 

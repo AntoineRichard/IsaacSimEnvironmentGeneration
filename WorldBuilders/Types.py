@@ -222,7 +222,7 @@ class Sphere_T(Layer_T):
 class Cylinder_T(Layer_T):
     center: tuple = (0,0,0)
     radius_min: float = 0
-    radius_max: float = None
+    radius_max: float = 0.5
     theta_min: float = 0
     theta_max: float = np.pi*2
     height_min: float = -0.5
@@ -243,7 +243,7 @@ class Cylinder_T(Layer_T):
         assert self.theta_min >= 0, "The minimum value of theta must be larger than 0."
         assert self.theta_max <= np.pi*2, "The maximum value of theta must be smaller than 2pi."
         assert self.theta_max >= self.theta_min, "The maximum value of theta must be larger than self.theta_max."
-        assert self.radius_min > 0, "The minimal radius must be larger than 0."
+        assert self.radius_min >= 0, "The minimal radius must be larger than 0."
         assert self.radius_max > self.radius_min, "The maximum radius must be larger than the minimum radius."
         assert self.height_max > self.height_min, "The maximum height must be larger than the minimum height."
 
@@ -272,7 +272,7 @@ class Cone_T(Layer_T):
         assert self.theta_min >= 0, "The minimum value of theta must be larger than 0."
         assert self.theta_max <= np.pi*2, "The maximum value of theta must be smaller than 2pi."
         assert self.theta_max >= self.theta_min, "The maximum value of theta must be larger than self.theta_max."
-        assert self.radius_min > 0, "The minimal radius must be larger than 0."
+        assert self.radius_min >= 0, "The minimal radius must be larger than 0."
         assert self.radius_max > self.radius_min, "The maximum radius must be larger than the minimum radius."
         assert self.height_max > self.height_min, "The maximum height must be larger than the minimum height."
 
@@ -378,7 +378,9 @@ class NormalSampler_T(Sampler_T):
         super().__post_init__()
         assert type(self.mean) is tuple, "mean must be a tuple."
         assert type(self.std) is tuple, "std must be a tuple."
+        self.setSigma()
 
+    def setSigma(self):
         if len(self.std) == 1:
             self.std = np.eye(self.randomization_space) * self.std
         elif len(self.std) == len(self.mean):
@@ -391,11 +393,14 @@ class MaternClusterPointSampler_T(Sampler_T):
     lambda_parent: int = 10  # density of parent Poisson point process
     lambda_daughter: int = 100  # mean number of points in each cluster
     cluster_radius: float = 0.1  # radius of cluster disk (for daughter points) 
+    warp: tuple = None
 
     def __post_init__(self):
         super().__post_init__()
         assert type(self.lambda_parent) is int, "lambda_parent must be an int."
         assert type(self.lambda_daughter) is int, "lambda_daughter must be an int."
+        if self.warp is not None:
+            assert len(self.warp) == self.randomization_space, "warp parameter must be of same length as the randomization space."
 
 @dataclasses.dataclass
 class HardCoreMaternClusterPointSampler_T(Sampler_T):
@@ -404,22 +409,28 @@ class HardCoreMaternClusterPointSampler_T(Sampler_T):
     cluster_radius: float = 0.1  # radius of cluster disk (for daughter points) 
     core_radius: float = 0.02
     num_repeat: int = 0
+    warp: tuple = None
 
     def __post_init__(self):
         super().__post_init__()
         assert type(self.lambda_parent) is int, "lambda_parent must be an int."
         assert type(self.lambda_daughter) is int, "lambda_daughter must be an int."
+        if self.warp is not None:
+            assert len(self.warp) == self.randomization_space, "warp parameter must be of same length as the randomization space."
 
 @dataclasses.dataclass
 class ThomasClusterSampler_T(Sampler_T):
     lambda_parent: int = 10  # density of parent Poisson point process
     lambda_daughter: int = 100  # mean number of points in each cluster
     sigma: float = 0.05
+    warp: tuple = None
 
     def __post_init__(self):
         super().__post_init__()
         assert type(self.lambda_parent) is int, "lambda_parent must be an int."
         assert type(self.lambda_daughter) is int, "lambda_daughter must be an int."
+        if self.warp is not None:
+            assert len(self.warp) == self.randomization_space, "warp parameter must be of same length as the randomization space."
 
 @dataclasses.dataclass
 class HardCoreThomasClusterSampler_T(Sampler_T):
@@ -428,11 +439,14 @@ class HardCoreThomasClusterSampler_T(Sampler_T):
     sigma: float = 0.05 
     core_radius: float = 0.02
     num_repeat: int = 0
+    warp: tuple = None
 
     def __post_init__(self):
         super().__post_init__()
         assert type(self.lambda_parent) is int, "lambda_parent must be an int."
         assert type(self.lambda_daughter) is int, "lambda_daughter must be an int."
+        if self.warp is not None:
+            assert len(self.warp) == self.randomization_space, "warp parameter must be of same length as the randomization space."
 
 @dataclasses.dataclass
 class PoissonPointSampler_T(Sampler_T):

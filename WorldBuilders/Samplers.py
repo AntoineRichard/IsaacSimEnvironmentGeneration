@@ -149,7 +149,6 @@ class NormalSampler(BaseSampler):
                 num_points += np.sum(correct)
                 points.append(pts[correct])
             counter += 1
-            print(pts)
         points = np.concatenate(points)[:num]
         return np.array(points)
 
@@ -184,7 +183,10 @@ class MaternClusterPointSampler(BaseSampler):
         self.p = masked_pd / np.sum(masked_pd)
 
     def getParents(self, bounds, area=None):
-        bounds_ext = np.array(bounds)
+        if self._sampler_cfg.warp is not None:
+            bounds_ext = (np.array(bounds).T*np.array(self._sampler_cfg.warp)).T
+        else:
+            bounds_ext = np.array(bounds)
         bounds_ext[:,0] -= self._sampler_cfg.cluster_radius
         bounds_ext[:,1] += self._sampler_cfg.cluster_radius
         if area is None:
@@ -217,6 +219,8 @@ class MaternClusterPointSampler(BaseSampler):
             daughter_coords = np.stack([x,y]).T
         parents_coords = np.repeat(parents_coords.T, num_points_daughter,axis=-1).T
         daughter_coords = daughter_coords + parents_coords
+        if self._sampler_cfg.warp is not None:
+            daughter_coords = daughter_coords / np.array(self._sampler_cfg.warp)
         correct = self._check_fn(daughter_coords)
         return daughter_coords[correct]
 
@@ -258,7 +262,10 @@ class HardCoreMaternClusterPointSampler(BaseSampler):
         self.p = masked_pd / np.sum(masked_pd)
 
     def getParents(self, bounds, area=None):
-        bounds_ext = np.array(bounds)
+        if self._sampler_cfg.warp is not None:
+            bounds_ext = (np.array(bounds).T*np.array(self._sampler_cfg.warp)).T
+        else:
+            bounds_ext = np.array(bounds)
         bounds_ext[:,0] -= self._sampler_cfg.cluster_radius
         bounds_ext[:,1] += self._sampler_cfg.cluster_radius
         if area is None:
@@ -291,8 +298,10 @@ class HardCoreMaternClusterPointSampler(BaseSampler):
             daughter_coords = np.stack([x,y]).T
         parents_coords = np.repeat(parents_coords.T, num_points_daughter,axis=-1).T
         daughter_coords = daughter_coords + parents_coords
+        if self._sampler_cfg.warp is not None:
+            daughter_coords = daughter_coords / np.array(self._sampler_cfg.warp)
         correct = self._check_fn(daughter_coords)
-        return daughter_coords[correct]\
+        return daughter_coords[correct]
 
     def hardCoreRejection(self, daughter_coords):
         mark_age = self._rng.uniform(0, 1, daughter_coords.shape[0])
@@ -356,7 +365,10 @@ class ThomasClusterSampler(BaseSampler):
         self.p = masked_pd / np.sum(masked_pd)
 
     def getParents(self, bounds, area=None):
-        bounds_ext = np.array(bounds)
+        if self._sampler_cfg.warp is not None:
+            bounds_ext = (np.array(bounds).T*np.array(self._sampler_cfg.warp)).T
+        else:
+            bounds_ext = np.array(bounds)
         bounds_ext[:,0] -= self._sampler_cfg.sigma*6
         bounds_ext[:,1] += self._sampler_cfg.sigma*6
         if area is None:
@@ -382,6 +394,8 @@ class ThomasClusterSampler(BaseSampler):
             daughter_coords = np.stack([x,y]).T
         parents_coords = np.repeat(parents_coords.T, num_points_daughter,axis=-1).T
         daughter_coords = daughter_coords + parents_coords
+        if self._sampler_cfg.warp is not None:
+            daughter_coords = daughter_coords / np.array(self._sampler_cfg.warp)
         correct = self._check_fn(daughter_coords)
         return daughter_coords[correct]
 
@@ -423,7 +437,10 @@ class HardCoreThomasClusterSampler(BaseSampler):
         self.p = masked_pd / np.sum(masked_pd)
 
     def getParents(self, bounds, area=None):
-        bounds_ext = np.array(bounds)
+        if self._sampler_cfg.warp is not None:
+            bounds_ext = (np.array(bounds).T*np.array(self._sampler_cfg.warp)).T
+        else:
+            bounds_ext = np.array(bounds)
         bounds_ext[:,0] -= self._sampler_cfg.sigma*6
         bounds_ext[:,1] += self._sampler_cfg.sigma*6
         if area is None:
@@ -449,6 +466,8 @@ class HardCoreThomasClusterSampler(BaseSampler):
             daughter_coords = np.stack([x,y]).T
         parents_coords = np.repeat(parents_coords.T, num_points_daughter,axis=-1).T
         daughter_coords = daughter_coords + parents_coords
+        if self._sampler_cfg.warp is not None:
+            daughter_coords = daughter_coords / np.array(self._sampler_cfg.warp)
         correct = self._check_fn(daughter_coords)
         return daughter_coords[correct]
 
@@ -553,9 +572,11 @@ class LinearInterpolationSampler(BaseSampler):
         self.idx = np.arange(masked_pd.flatten().shape[0])
         self.p = masked_pd / np.sum(masked_pd)
 
-    def sample(self, num=1, **kwargs):
+    def sample(self, num: int = 1, endpoint: tuple = None, **kwargs):
+        if endpoint is None:
+            endpoint = [True]*self._sampler_cfg.randomization_space
         num_per_dim = int(np.power(num, 1/self._sampler_cfg.randomization_space))
-        grids = np.meshgrid(*[np.linspace(self._sampler_cfg.min[dim], self._sampler_cfg.max[dim], num_per_dim) for dim in range(self._sampler_cfg.randomization_space)])
+        grids = np.meshgrid(*[np.linspace(self._sampler_cfg.min[dim], self._sampler_cfg.max[dim], num_per_dim, endpoint=endpoint[dim]) for dim in range(self._sampler_cfg.randomization_space)])
         points = np.array([grid.flatten() for grid in grids]).T
         correct = self._check_fn(points)      
         return points[correct]
