@@ -379,12 +379,9 @@ class CylinderLayer(Layer3D):
         z = rand[:,2]
         return np.stack([x,y,z]).T
 
-class ImageLayer(Layer2D):
-    def __init__(self, layer_cfg: Image_T, sampler_cfg: Sampler_T) -> None:
-        super().__init__(layer_cfg, sampler_cfg)
-
-
-
+#class ImageLayer(Layer2D):
+#    def __init__(self, layer_cfg: Image_T, sampler_cfg: Sampler_T) -> None:
+#        super().__init__(layer_cfg, sampler_cfg)
 
 
 class LayerFactory:
@@ -407,42 +404,33 @@ Layer_Factory.register("Disk_T", DiskLayer)
 Layer_Factory.register("Cube_T", CubeLayer)
 Layer_Factory.register("Sphere_T", SphereLayer)
 Layer_Factory.register("Cylinder_T", CylinderLayer)
-Layer_Factory.register("Torus_T", ConeLayer)
-Layer_Factory.register("Cone_T", TorusLayer)
+#Layer_Factory.register("Torus_T", ConeLayer)
+#Layer_Factory.register("Cone_T", TorusLayer)
 
 
-class Spline(Layer1D):
-    def __init__(self) -> None:
-        super().__init__()
-        # [[start, end]]
-        # Rotation matrix
+#class Spline(Layer1D):
+#    def __init__(self) -> None:
+#        super().__init__()
+#        # [[start, end]]
+#        # Rotation matrix
 
-class SurfacePolygon(Layer2D):
-    def __init__(self) -> None:
-        super().__init__()
+#class SurfacePolygon(Layer2D):
+#    def __init__(self) -> None:
+#        super().__init__()
 
-class SurfaceSphere(Layer2D):
-    def __init__(self) -> None:
-        super().__init__()
+#class Image(BaseLayer):
+#    def __init__(self) -> None:
+#        super().__init__()
 
-class SurfaceTorus(Plane_T):
-    def __init__(self) -> None:
-        super().__init__()
+#class SemanticImage(Image):
+#    def __init__(self) -> None:
+#        super().__init__()
 
-class Image(BaseLayer):
-    def __init__(self) -> None:
-        super().__init__()
+#class FloatImage(Image):
+#    def __init__(self) -> None:
+#        super().__init__()
 
-class SemanticImage(Image):
-    def __init__(self) -> None:
-        super().__init__()
-
-class FloatImage(Image):
-    def __init__(self) -> None:
-        super().__init__()
-
-
-class Quaternion(Layer4D):
-    def __init__(self) -> None:
-        super().__init__()
+#class Quaternion(Layer4D):
+#    def __init__(self) -> None:
+#        super().__init__()
 

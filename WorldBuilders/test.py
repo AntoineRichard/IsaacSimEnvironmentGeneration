@@ -221,9 +221,6 @@ class Mixer:
     def Build():
         pass
 
-
-
-
 trans = Translation3D_T(z=0.25)
 quat =Quaternion_T(x=0.383,y=0.0,z=0.0,w=0.924)
 quat2 =Quaternion_T(x=0.,y=0.383,z=0.0,w=0.924)

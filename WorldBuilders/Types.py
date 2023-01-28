@@ -317,28 +317,28 @@ class Torus_T(Layer_T):
         assert self.radius1_max > self.radius1_min, "The maximum radius must be larger than the minimum radius."
         assert self.radius2_max > self.radius2_min, "The maximum radius must be larger than the minimum radius."
 
-@dataclasses.dataclass
-class Image_T(Layer_T):
-    resolution: tuple = (1,1)
-    path: str = None
-    data: np.ndarray([]) = None
-    func: function = lambda x: x
-    output_space: int = 2
+#@dataclasses.dataclass
+#class Image_T(Layer_T):
+#    resolution: tuple = (1,1)
+#    path: str = None
+#    data: np.ndarray([]) = None
+#    func: function = lambda x: x
+#    output_space: int = 2
 
-@dataclasses.dataclass
-class Mask_T(Layer_T):
-    resolution: tuple = (1,1)
-    path: str = None
-    data: np.ndarray([]) = None
-    output_space: int = 2
+#@dataclasses.dataclass
+#class Mask_T(Layer_T):
+#    resolution: tuple = (1,1)
+#    path: str = None
+#    data: np.ndarray([]) = None
+#    output_space: int = 2
 
-@dataclasses.dataclass
-class NormalMap_T(Layer_T):
-    resolution: tuple = (1,1)
-    path: str = None
-    data: np.ndarray([]) = None
-    output_space: int = 2
-    output_as_quaternions: bool = True
+#@dataclasses.dataclass
+#class NormalMap_T(Layer_T):
+#    resolution: tuple = (1,1)
+#    path: str = None
+#    data: np.ndarray([]) = None
+#    output_space: int = 2
+#    output_as_quaternions: bool = True
 
 ##################################
 #                                #
@@ -452,10 +452,10 @@ class LinearInterpolationSampler_T(Sampler_T):
         assert type(self.min) is tuple, "min must be a tuple."
         assert type(self.max) is tuple, "max must be a tuple."
 
-@dataclasses.dataclass
-class ImageSampler_T(Sampler_T):
-    func: function = lambda x: x
+#@dataclasses.dataclass
+#class ImageSampler_T(Sampler_T):
+#    func: function = lambda x: x
 
-@dataclasses.dataclass
-class NormalMapSampler_T(Sampler_T):
-    func: function = lambda x:x
+#@dataclasses.dataclass
+#class NormalMapSampler_T(Sampler_T):
+#    func: function = lambda x:x
