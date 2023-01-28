@@ -278,6 +278,7 @@ disk = Disk_T(center=(0,0), radius_min=0.1, radius_max=0.5, theta_min = 1/8*np.p
 sphere = Sphere_T(center=(0,0,0), radius_min = 0.1, radius_max=0.5, theta_min = 1/8*np.pi,theta_max=7/4*np.pi, phi_min=1/4*np.pi, phi_max=15/8*np.pi, output_space=3, transform=T2)
 cone = Cone_T(center=(0,0,0))
 cylinder = Cylinder_T(center=(0,0,0))
+torus = Torus_T(center=(0,0,0), radius2_min=0.05)
 
 fig = plt.figure()
 
@@ -721,6 +722,64 @@ ax.set_ylim(-1, 1)
 ax.set_zlim(-1, 1)
 ax.set_title("ThomasClusterProcess in a Cone")
 plt.show()
+
+fig = plt.figure()
+torus_layer = TorusLayer(torus, uni3)
+points = torus_layer(1000)
+ax = fig.add_subplot(1,6,1, projection='3d')
+ax.scatter(points[:,0],points[:,1],points[:,2],'+')
+ax.set_xlim(-1, 1)
+ax.set_ylim(-1, 1)
+ax.set_zlim(-1, 1)
+ax.set_title("Uniform in a Torus")
+
+torus_layer = TorusLayer(torus, norm3c)
+points = torus_layer(1000)
+ax = fig.add_subplot(1,6,2, projection='3d')
+ax.scatter(points[:,0],points[:,1],points[:,2],'+')
+ax.set_xlim(-1, 1)
+ax.set_ylim(-1, 1)
+ax.set_zlim(-1, 1)
+ax.set_title("Multivariate Normal in a Torus")
+
+torus_layer = TorusLayer(torus, poi3)
+points = torus_layer(1000)
+ax = fig.add_subplot(1,6,3, projection='3d')
+ax.scatter(points[:,0],points[:,1],points[:,2],'+')
+ax.set_xlim(-1, 1)
+ax.set_ylim(-1, 1)
+ax.set_zlim(-1, 1)
+ax.set_title("PoissonPointProcess in a Torus")
+
+torus_layer = TorusLayer(torus, int3)
+points = torus_layer(1000)
+ax = fig.add_subplot(1,6,4, projection='3d')
+ax.scatter(points[:,0],points[:,1],points[:,2],'+')
+ax.set_xlim(-1, 1)
+ax.set_ylim(-1, 1)
+ax.set_zlim(-1, 1)
+ax.set_title("LinearInterpolation in a Torus")
+
+torus_layer = TorusLayer(torus, matern3)
+points = torus_layer(1000)
+ax = fig.add_subplot(1,6,5, projection='3d')
+ax.scatter(points[:,0],points[:,1],points[:,2],'+')
+ax.set_xlim(-1, 1)
+ax.set_ylim(-1, 1)
+ax.set_zlim(-1, 1)
+ax.set_title("MaternClusterPointProcess in a Torus")
+
+torus_layer = TorusLayer(torus, thomas3)
+points = torus_layer(1000)
+ax = fig.add_subplot(1,6,6, projection='3d')
+ax.scatter(points[:,0],points[:,1],points[:,2],'+')
+ax.set_xlim(-1, 1)
+ax.set_ylim(-1, 1)
+ax.set_zlim(-1, 1)
+ax.set_title("ThomasClusterProcess in a Torus")
+
+plt.show()
+
 
 
 """

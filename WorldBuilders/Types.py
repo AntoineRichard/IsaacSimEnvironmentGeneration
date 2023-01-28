@@ -279,19 +279,16 @@ class Cone_T(Layer_T):
 @dataclasses.dataclass
 class Torus_T(Layer_T):
     center: tuple = (0,0,0)
-    radius1_min: float = 0
-    radius1_max: float = 0.5
+    radius1: float = 0.5
     radius2_min: float = 0
     radius2_max: float = 0.25
     theta1_min: float = 0
     theta1_max: float = np.pi*2
     theta2_min: float = 0
     theta2_max: float = np.pi*2
-    alpha1: float = 1
-    beta1: float = 1
-    alpha2: float = 1
-    beta2: float = 1
-    ceta2: float = 1
+    alpha: float = 1
+    beta: float = 1
+    ceta: float = 1
     output_space: int = 3
     transform: Transformation3D_T = None
     use_cartesian_space = False
@@ -301,20 +298,17 @@ class Torus_T(Layer_T):
         if self.transform is not None:
             assert isinstance(self.transform, Transformation3D_T), "A 3D object, like a Cylinder, requires a 3D transform."
         assert self.output_space >= 3, "output_space must be greater or equal to 3."
-        assert self.alpha1 > 0, "The alpha value must be larger than 0."
-        assert self.alpha2 > 0, "The alpha value must be larger than 0."
-        assert self.beta1 > 0, "The beta value must be larger than 0."
-        assert self.beta2 > 0, "The beta value must be larger than 0."
-        assert self.ceta2 > 0, "The ceta value must be larger than 0."
+        assert self.alpha > 0, "The alpha value must be larger than 0."
+        assert self.beta > 0, "The beta value must be larger than 0."
+        assert self.ceta > 0, "The ceta value must be larger than 0."
         assert self.theta1_min >= 0, "The minimum value of theta must be larger than 0."
         assert self.theta1_max <= np.pi*2, "The maximum value of theta must be smaller than 2pi."
         assert self.theta2_min >= 0, "The minimum value of theta must be larger than 0."
         assert self.theta2_max <= np.pi*2, "The maximum value of theta must be smaller than 2pi."
         assert self.theta1_max >= self.theta1_min, "The maximum value of theta must be larger than self.theta_max."
         assert self.theta2_max >= self.theta2_min, "The maximum value of theta must be larger than self.theta_max."
-        assert self.radius1_min > 0, "The minimal radius must be larger than 0."
+        assert self.radius1 > 0, "The minimal radius must be larger than 0."
         assert self.radius2_min > 0, "The minimal radius must be larger than 0."
-        assert self.radius1_max > self.radius1_min, "The maximum radius must be larger than the minimum radius."
         assert self.radius2_max > self.radius2_min, "The maximum radius must be larger than the minimum radius."
 
 #@dataclasses.dataclass
