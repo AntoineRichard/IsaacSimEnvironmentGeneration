@@ -5,7 +5,10 @@ from Types import *
 class BaseSampler:
     def __init__(self, sampler_cfg: Sampler_T):
         self._sampler_cfg = sampler_cfg
-        self._rng = np.random.default_rng()
+        if self._sampler_cfg.seed != -1:
+            self._rng = np.random.default_rng(self._sampler_cfg.seed)
+        else:
+            self._rng = np.random.default_rng()
         self.image = None
         self.offset = (None, None)
         self._check_fn = lambda x: np.ones_like(x[:,0],dtype=bool)
