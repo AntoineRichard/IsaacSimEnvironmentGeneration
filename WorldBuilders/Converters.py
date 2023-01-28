@@ -80,18 +80,12 @@ def PlaneMeshConverter(prim: Usd.prim) -> Plane_T:
 def DiskMeshConverter(prim: Usd.Prim) -> Disk_T:
     scale = getScale(prim)
     r1 = np.min([scale[0], scale[1]])
-    r2 = np.max([scale[0], scale[1]])
-    r = r2/r1
     min_radius = 0
     max_radius = 0.5 * r1
     min_theta = 0
     max_theta = np.pi*2
-    if r1 == scale[0]:
-        alpha = 1
-        beta = r
-    else:
-        alpha = r
-        beta = 1
+    alpha = scale[0]/r1
+    beta = scale[1]/r1
     T = getTransform(prim)
     return Disk_T(min_radius=min_radius,
                   max_radius=max_radius,
@@ -123,20 +117,14 @@ def CubeMeshConverter(prim: Usd.Prim) -> Cube_T:
 def CylinderMeshConverter(prim: Usd.Prim) -> Cylinder_T:
     scale = getScale(prim)
     r1 = np.min([scale[0], scale[1]])
-    r2 = np.max([scale[0], scale[1]])
-    r = r2/r1
     min_radius = 0
     max_radius = 0.5 * r1
     min_height = -0.5 * scale[2]
     max_height = 0.5 * scale[2]
     min_theta = 0
     max_theta = np.pi*2
-    if r1 == scale[0]:
-        alpha = 1
-        beta = r
-    else:
-        alpha = r
-        beta = 1
+    alpha = scale[0]/r1
+    beta = scale[1]/r1
     T = getTransform(prim)
     return Cylinder_T(min_radius=min_radius,
                   max_radius=max_radius,
@@ -152,7 +140,6 @@ def CylinderMeshConverter(prim: Usd.Prim) -> Cylinder_T:
 def SphereMeshConverter(prim: Usd.Prim) -> Sphere_T:
     scale = getScale(prim)
     r1 = np.min([scale[0], scale[1], scale[2]])
-    id_min = np.argmin(scale)
     min_radius = 0
     max_radius = 0.5 * r1
     min_theta = 0
@@ -160,18 +147,9 @@ def SphereMeshConverter(prim: Usd.Prim) -> Sphere_T:
     min_phi = 0
     max_phi = np.pi*2
 
-    if id_min == 0:
-        alpha = 1
-        beta = scale[1]/r1
-        ceta = scale[2]/r1
-    elif id_min == 1:
-        alpha = scale[0]/r1
-        beta = 1
-        ceta = scale[2]/r1
-    else:
-        alpha = scale[0]/r1
-        beta = scale[1]/r1
-        ceta = 1
+    alpha = scale[0]/r1
+    beta = scale[1]/r1
+    ceta = scale[2]/r1
     T = getTransform(prim)
     return Sphere_T(min_radius=min_radius,
                   max_radius=max_radius,
@@ -188,20 +166,14 @@ def SphereMeshConverter(prim: Usd.Prim) -> Sphere_T:
 def ConeMeshConverter(prim: Usd.Prim) -> Cone_T:
     scale = getScale(prim)
     r1 = np.min([scale[0], scale[1]])
-    r2 = np.max([scale[0], scale[1]])
-    r = r2/r1
     min_radius = 0
     max_radius = 0.5 * r1
     min_height = -0.5
     max_height = 0.5
     min_theta = 0
     max_theta = np.pi*2
-    if r1 == scale[0]:
-        alpha = 1
-        beta = r
-    else:
-        alpha = r
-        beta = 1
+    alpha = scale[0]/r1
+    beta = scale[1]/r1
     T = getTransform(prim)
     return Cone_T(min_radius=min_radius,
                   max_radius=max_radius,
@@ -217,28 +189,18 @@ def ConeMeshConverter(prim: Usd.Prim) -> Cone_T:
 def TorusMeshConverter(prim: Usd.Prim) -> Torus_T:
     scale = getScale(prim)
     r1 = np.min([scale[0], scale[1]])
-    r2 = np.min([scale[0], scale[1]])
-    id_min = np.argmin(scale)
     min_radius2 = 0
     max_radius2 = 0.5 * r1
     min_radius1 = 0
-    max_radius1 = 0.25
+    max_radius1 = 0.25 * r1
     min_theta1 = 0
     max_theta1 = np.pi*2
     min_theta2 = 0
     max_theta2 = np.pi*2
-    if id_min == 0:
-        alpha = 1
-        beta = scale[1]/r1
-        ceta = scale[2]/r1
-    elif id_min == 1:
-        alpha = scale[0]/r1
-        beta = 1
-        ceta = scale[2]/r1
-    else:
-        alpha = scale[0]/r1
-        beta = scale[1]/r1
-        ceta = 1
+    alpha = scale[0]/r1
+    beta = scale[1]/r1
+    ceta = scale[2]/r1
+    T = getTransform(prim)
     return Torus_T(min_radius1=min_radius1,
                   max_radius1=max_radius1,
                   min_radius2=min_radius2,
@@ -251,6 +213,7 @@ def TorusMeshConverter(prim: Usd.Prim) -> Torus_T:
                   beta1=beta,
                   alpha2=alpha,
                   beta2=beta,
+                  ceta2=ceta,
                   transform=T,
                   output_space=3)
 
@@ -279,22 +242,15 @@ def CylinderConverter(prim) -> Cylinder_T:
     height = prim.GetAttribute("height").Get()
     axis = prim.GetAttribute("axis").Get()
 
-
     r1 = np.min([scale[0], scale[1]])
-    r2 = np.max([scale[0], scale[1]])
-    r = r2/r1
     min_radius = 0
     max_radius = radius * r1
     min_height = (-height/2) * scale[2]
     max_height = (height/2) * scale[2]
     min_theta = 0
     max_theta = np.pi*2
-    if r1 == scale[0]:
-        alpha = 1
-        beta = r
-    else:
-        alpha = r
-        beta = 1
+    alpha = scale[0] / r1
+    beta = scale[1] / r1
     T = getTransform(prim)
 
     if axis == "X": # add a rotation of 90degrees on Y
@@ -318,7 +274,6 @@ def SphereConverter(prim) -> Sphere_T:
     scale = getScale(prim)
     radius = prim.GetAttribute("radius").Get()
     r1 = np.min([scale[0], scale[1], scale[2]])
-    id_min = np.argmin(scale)
     min_radius = 0
     max_radius = radius * r1
     min_theta = 0
@@ -326,18 +281,9 @@ def SphereConverter(prim) -> Sphere_T:
     min_phi = 0
     max_phi = np.pi*2
 
-    if id_min == 0:
-        alpha = 1
-        beta = scale[1]/r1
-        ceta = scale[2]/r1
-    elif id_min == 1:
-        alpha = scale[0]/r1
-        beta = 1
-        ceta = scale[2]/r1
-    else:
-        alpha = scale[0]/r1
-        beta = scale[1]/r1
-        ceta = 1
+    alpha = scale[0]/r1
+    beta = scale[1]/r1
+    ceta = scale[2]/r1
     T = getTransform(prim)
     return Sphere_T(min_radius=min_radius,
                   max_radius=max_radius,
