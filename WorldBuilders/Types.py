@@ -291,6 +291,7 @@ class Torus_T(Layer_T):
     beta1: float = 1
     alpha2: float = 1
     beta2: float = 1
+    ceta2: float = 1
     output_space: int = 3
     transform: Transformation3D_T = None
     use_cartesian_space = False
@@ -301,9 +302,10 @@ class Torus_T(Layer_T):
             assert isinstance(self.transform, Transformation3D_T), "A 3D object, like a Cylinder, requires a 3D transform."
         assert self.output_space >= 3, "output_space must be greater or equal to 3."
         assert self.alpha1 > 0, "The alpha value must be larger than 0."
+        assert self.alpha2 > 0, "The alpha value must be larger than 0."
         assert self.beta1 > 0, "The beta value must be larger than 0."
-        assert self.alpha1 > 0, "The alpha value must be larger than 0."
-        assert self.beta1 > 0, "The beta value must be larger than 0."
+        assert self.beta2 > 0, "The beta value must be larger than 0."
+        assert self.ceta2 > 0, "The ceta value must be larger than 0."
         assert self.theta1_min >= 0, "The minimum value of theta must be larger than 0."
         assert self.theta1_max <= np.pi*2, "The maximum value of theta must be smaller than 2pi."
         assert self.theta2_min >= 0, "The minimum value of theta must be larger than 0."
