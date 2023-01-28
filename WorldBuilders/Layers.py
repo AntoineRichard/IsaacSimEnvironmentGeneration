@@ -5,6 +5,7 @@ import copy
 
 class BaseLayer:
     def __init__(self, layer_cfg: Layer_T, sampler_cfg: Sampler_T, **kwarg) -> None:
+        assert (self.__class__.__name__[:-5] == layer_cfg.__class__.__name__[:-2]), "Configuration mismatch. The type of the config must match the type of the layer."
         self._randomizer = None
         self._randomization_space = None
 
@@ -102,7 +103,7 @@ class BaseLayer:
             proj = np.matmul(self._T,points.T).T[:,:-1]
             return proj
 
-    def sample(self, num: int):
+    def sample(self, num: int = 1):
         raise NotImplementedError()
 
     def applyProjection(self, points:np.ndarray([])) -> np.ndarray([]):
@@ -117,8 +118,8 @@ class BaseLayer:
         else:
             return self.transform(points)
 
-    def __call__(self, num: int):
-        points = self.sample(num)
+    def __call__(self, num: int = 1) -> np.ndarray([]):
+        points = self.sample(num = num)
         points = self.project(points)
         points = self.transform(points)
         return points
@@ -154,7 +155,7 @@ class LineLayer(Layer1D):
         self.initializeSampler()
         self._sampler._check_fn = self.checkBoundaries
 
-    def checkBoundaries(self, points):
+    def checkBoundaries(self, points: np.ndarray([])) -> np.ndarray([]):
         b1 = points[:,0] > self._layer_cfg.xmin
         b2 = points[:,0] < self._layer_cfg.xmax
         return b1*b2
@@ -165,7 +166,7 @@ class LineLayer(Layer1D):
     def createMask(self):
         pass
 
-    def sample(self, num):
+    def sample(self, num: int = 1):
         return self._sampler(num=num, bounds=self._bounds)
 
 class CircleLayer(Layer1D):
@@ -185,7 +186,7 @@ class CircleLayer(Layer1D):
         else:
             self._skip_projection = False
 
-    def checkBoundaries(self, points):
+    def checkBoundaries(self, points: np.ndarray([])) -> np.ndarray([]):
         b1 = points[:,0] >= self._layer_cfg.theta_min
         b2 = points[:,0] <= self._layer_cfg.theta_max
         return b1*b2
@@ -196,13 +197,13 @@ class CircleLayer(Layer1D):
     def createMask(self):
         pass
 
-    def sample(self, num):
+    def sample(self, num: int = 1):
         theta = self._sampler(num=num, bounds=self._bounds)
         x = self._layer_cfg.center[0] + np.cos(theta)*self._layer_cfg.radius*self._layer_cfg.alpha
         y = self._layer_cfg.center[1] + np.sin(theta)*self._layer_cfg.radius*self._layer_cfg.beta
         return np.stack([x,y]).T[0]
 
-    def project(self, points):
+    def project(self, points: np.ndarray([])) -> np.ndarray([]):
         if self._skip_projection:
             return points
         else:
@@ -224,7 +225,7 @@ class PlaneLayer(Layer2D):
         self._sampler._check_fn = self.checkBoundaries
 
 
-    def checkBoundaries(self, points):
+    def checkBoundaries(self, points: np.ndarray([])) -> np.ndarray([]):
         b1 = points[:,0] > self._layer_cfg.xmin
         b2 = points[:,0] < self._layer_cfg.xmax
         b3 = points[:,1] > self._layer_cfg.ymin
@@ -238,7 +239,7 @@ class PlaneLayer(Layer2D):
     def createMask(self):
         pass
 
-    def sample(self, num):
+    def sample(self, num: int = 1) -> np.ndarray([]):
         return self._sampler(num=num, bounds=self._bounds)
 
 class DiskLayer(Layer2D):
@@ -260,7 +261,7 @@ class DiskLayer(Layer2D):
         self.initializeSampler()
         self._sampler._check_fn = self.checkBoundaries
 
-    def checkBoundaries(self, points):
+    def checkBoundaries(self, points: np.ndarray([])) -> np.ndarray([]):
         b1 = points[:,0] >= 0.0
         b2 = points[:,0] <= 1.0
         b3 = points[:,1] >= 0.0
@@ -275,7 +276,7 @@ class DiskLayer(Layer2D):
     def createMask(self):
         pass
 
-    def sample(self, num):
+    def sample(self, num: int = 1) -> np.ndarray([]):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
 
         r = self._layer_cfg.radius_min + np.sqrt(rand[:,0]) * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
@@ -297,7 +298,7 @@ class CubeLayer(Layer3D):
         self.initializeSampler()
         self._sampler._check_fn = self.checkBoundaries
 
-    def checkBoundaries(self, points):
+    def checkBoundaries(self, points: np.ndarray([])) -> np.ndarray([]):
         b1 = points[:,0] > self._layer_cfg.xmin
         b2 = points[:,0] < self._layer_cfg.xmax
         b3 = points[:,1] > self._layer_cfg.ymin
@@ -314,7 +315,7 @@ class CubeLayer(Layer3D):
     def createMask(self):
         pass
 
-    def sample(self, num):
+    def sample(self, num:int =1) -> np.ndarray([]):
         return self._sampler(num=num, bounds=self._bounds)
 
 class SphereLayer(Layer3D):
@@ -338,7 +339,7 @@ class SphereLayer(Layer3D):
         self.initializeSampler()
         self._sampler._check_fn = self.checkBoundaries
 
-    def checkBoundaries(self, points):
+    def checkBoundaries(self, points: np.ndarray([])) -> np.ndarray([]):
         b1 = points[:,0] >= 0.0
         b2 = points[:,0] <= 1.0
         b3 = points[:,1] >= 0.0
@@ -356,7 +357,7 @@ class SphereLayer(Layer3D):
     def createMask(self):
         pass
 
-    def sample(self, num):
+    def sample(self, num:int = 1) -> np.ndarray([]):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
 
         r = self._layer_cfg.radius_min + np.sqrt(rand[:,0]) * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
@@ -389,7 +390,7 @@ class CylinderLayer(Layer3D):
         self.initializeSampler()
         self._sampler._check_fn = self.checkBoundaries
 
-    def checkBoundaries(self, points):
+    def checkBoundaries(self, points: np.ndarray([])) -> np.ndarray([]):
         b1 = points[:,0] >= 0.0
         b2 = points[:,0] <= 1.0
         b3 = points[:,1] >= 0.0
@@ -407,7 +408,7 @@ class CylinderLayer(Layer3D):
     def createMask(self):
         pass
 
-    def sample(self, num):
+    def sample(self, num: int = 1) -> np.ndarray([]):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
 
         r = self._layer_cfg.radius_min + (self._layer_cfg.radius_max - self._layer_cfg.radius_min)*np.sqrt(rand[:,0])
@@ -441,7 +442,7 @@ class ConeLayer(Layer3D):
         self.initializeSampler()
         self._sampler._check_fn = self.checkBoundaries
 
-    def checkBoundaries(self, points):
+    def checkBoundaries(self, points: np.ndarray([])) -> np.ndarray([]):
         b1 = points[:,0] >= 0.0
         b2 = points[:,0] <= 1.0
         b3 = points[:,1] >= 0.0
@@ -459,7 +460,7 @@ class ConeLayer(Layer3D):
     def createMask(self):
         pass
 
-    def sample(self, num):
+    def sample(self, num: int = 1) -> np.ndarray([]):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
 
         r = self._layer_cfg.radius_min + (self._layer_cfg.radius_max - self._layer_cfg.radius_min)*np.sqrt(rand[:,0])
@@ -492,7 +493,7 @@ class TorusLayer(Layer3D):
         self.initializeSampler()
         self._sampler._check_fn = self.checkBoundaries
 
-    def checkBoundaries(self, points):
+    def checkBoundaries(self, points: np.ndarray([])) -> np.ndarray([]):
         b1 = points[:,0] >= 0.0
         b2 = points[:,0] <= 1.0
         b3 = points[:,1] >= 0.0
@@ -512,7 +513,7 @@ class TorusLayer(Layer3D):
     def createMask(self):
         pass
 
-    def sample(self, num):
+    def sample(self, num: int = 1) -> np.ndarray([]):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
 
         r2 = self._layer_cfg.radius2_min + np.sqrt(rand[:,0]) * (self._layer_cfg.radius2_max - self._layer_cfg.radius2_min)
@@ -534,10 +535,10 @@ class LayerFactory:
     def register(self, name: str, class_: BaseLayer) -> None:
         self.creators[name] = class_
         
-    def get(self, cfg: Layer_T, **kwargs:dict) -> BaseLayer:
+    def get(self, cfg: Layer_T, sampler_cfg: Sampler_T) -> BaseLayer:
         if cfg.__class__.__name__ not in self.creators.keys():
             raise ValueError("Unknown layer requested.")
-        return self.creators[cfg.__class__.__name__](cfg)
+        return self.creators[cfg.__class__.__name__](cfg, sampler_cfg)
 
 Layer_Factory = LayerFactory()
 Layer_Factory.register("Line_T", LineLayer)
