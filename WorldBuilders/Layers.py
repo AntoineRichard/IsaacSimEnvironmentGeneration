@@ -128,12 +128,16 @@ class Layer1D(BaseLayer):
         super().__init__(layer_cfg, sampler_cfg)
 
 class Layer2D(BaseLayer):
-    # Defines a 1D randomization space.
+    # Defines a 2D randomization space.
     def __init__(self, output_space: Layer_T, sampler_cfg: Sampler_T) -> None:
         super().__init__(output_space, sampler_cfg)
 
 class Layer3D(BaseLayer):
-    # Defines a 1D randomization space.
+    # Defines a 3D randomization space.
+    def __init__(self, output_space: Layer_T, sampler_cfg: Sampler_T) -> None:
+        super().__init__(output_space, sampler_cfg)
+
+class Layer4D(BaseLayer):
     def __init__(self, output_space: Layer_T, sampler_cfg: Sampler_T) -> None:
         super().__init__(output_space, sampler_cfg)
 
@@ -338,6 +342,51 @@ class SphereLayer(Layer3D):
         z = self._layer_cfg.center[2] + np.cos(rand[:,2])*np.sqrt(rand[:,0])*self._layer_cfg.ceta
         return np.stack([x,y,z]).T
 
+class CylinderLayer(Layer3D):
+    def __init__(self, layer_cfg: Cylinder_T, sampler_cfg: Sampler_T) -> None:
+        super().__init__(layer_cfg, sampler_cfg)
+
+        if isinstance(self._sampler_cfg, UniformSampler_T) or isinstance(self._sampler_cfg, LinearInterpolationSampler_T):
+            self._sampler_cfg.randomization_space = 3
+            self._sampler_cfg.min = [self._layer_cfg.radius_min**2, self._layer_cfg.height_min, self._layer_cfg.theta_min]
+            self._sampler_cfg.max = [self._layer_cfg.radius_max**2, self._layer_cfg.height_max, self._layer_cfg.theta_max]
+
+        self.initializeSampler()
+        self._sampler._check_fn = self.checkBoundaries
+
+    def checkBoundaries(self, points):
+        b1 = points[:,0] > self._layer_cfg.radius_min**2
+        b2 = points[:,0] < self._layer_cfg.radius_max**2
+        b3 = points[:,1] > self._layer_cfg.height_min
+        b4 = points[:,1] < self._layer_cfg.height_max
+        b5 = points[:,2] > self._layer_cfg.theta_min
+        b6 = points[:,2] < self._layer_cfg.theta_max
+        return b1*b2*b3*b4*b5*b6
+
+    def getBounds(self):
+        self._bounds = np.array([[self._layer_cfg.radius_min**2, self._layer_cfg.radius_max**2],
+                                [self._layer_cfg.height_min, self._layer_cfg.height_max],
+                                [self._layer_cfg.theta_min, self._layer_cfg.theta_max]])
+        self._area = (self._layer_cfg.theta_max - self._layer_cfg.theta_min) * (self._layer_cfg.height_max - self._layer_cfg.height_min) * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)**2
+
+    def createMask(self):
+        pass
+
+    def sample(self, num):
+        rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
+        x = self._layer_cfg.center[0] + np.cos(rand[:,2])*np.sqrt(rand[:,0])*self._layer_cfg.alpha
+        y = self._layer_cfg.center[1] + np.sin(rand[:,2])*np.sqrt(rand[:,0])*self._layer_cfg.beta
+        z = rand[:,2]
+        return np.stack([x,y,z]).T
+
+class ImageLayer(Layer2D):
+    def __init__(self, layer_cfg: Image_T, sampler_cfg: Sampler_T) -> None:
+        super().__init__(layer_cfg, sampler_cfg)
+
+
+
+
+
 class LayerFactory:
     def __init__(self):
         self.creators = {}
@@ -357,6 +406,9 @@ Layer_Factory.register("Plane_T", PlaneLayer)
 Layer_Factory.register("Disk_T", DiskLayer)
 Layer_Factory.register("Cube_T", CubeLayer)
 Layer_Factory.register("Sphere_T", SphereLayer)
+Layer_Factory.register("Cylinder_T", CylinderLayer)
+Layer_Factory.register("Torus_T", ConeLayer)
+Layer_Factory.register("Cone_T", TorusLayer)
 
 
 class Spline(Layer1D):
@@ -365,23 +417,11 @@ class Spline(Layer1D):
         # [[start, end]]
         # Rotation matrix
 
-class Collection1D(Layer1D):
-    def __init__(self) -> None:
-        super().__init__()
-        # work on uniform distributions only
-        # [[[start, end]]]
-        # [Rotation matrix]
-
-
 class SurfacePolygon(Layer2D):
     def __init__(self) -> None:
         super().__init__()
 
 class SurfaceSphere(Layer2D):
-    def __init__(self) -> None:
-        super().__init__()
-
-class SurfaceCylinder(Plane_T):
     def __init__(self) -> None:
         super().__init__()
 
@@ -401,28 +441,6 @@ class FloatImage(Image):
     def __init__(self) -> None:
         super().__init__()
 
-
-class Cylinder(Layer3D):
-    def __init__(self) -> None:
-        super().__init__()
-
-class Cone(Layer3D):
-    def __init__(self) -> None:
-        super().__init__()
-
-class Pyramid(Layer3D):
-    def __init__(self) -> None:
-        super().__init__()
-
-class VolumeTorus(Layer3D):
-    def __init__(self) -> None:
-        super().__init__()
-
-
-class Layer4D(BaseLayer):
-    def __init__(self) -> None:
-        super().__init__()
-        self.randomization_space = 4
 
 class Quaternion(Layer4D):
     def __init__(self) -> None:
