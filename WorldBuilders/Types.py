@@ -79,7 +79,7 @@ class Transformation3D_T(Transformation_T):
 @dataclasses.dataclass
 class Layer_T:
     output_space: int = 0
-    transform: Transformation_T = Transformation3D_T()
+    transform: Transformation_T = None
 
     def __post_init__(self):
         assert self.output_space > 0, "output_space must be larger than 0."
@@ -347,10 +347,19 @@ class Sampler_T:
     use_image_sampling: bool = False
     seed: int = -1
     max_rejection_sampling_loop: int = 5
+    is_point_process = False
 
     def __post_init__(self):
         assert self.randomization_space > 0, "randomization_space must be larger than 0."
         assert type(self.randomization_space) is int, "randomization_space must be an int."
+
+@dataclasses.dataclass
+class PointProcess_T:
+    is_point_process = True
+
+class HardCore_T:
+    core_radius: float = 0.02
+    num_repeat: int = 0
 
 @dataclasses.dataclass
 class UniformSampler_T(Sampler_T):
@@ -383,7 +392,7 @@ class NormalSampler_T(Sampler_T):
             self.std = np.array(self.std).reshape(self.randomization_space,self.randomization_space)
 
 @dataclasses.dataclass
-class MaternClusterPointSampler_T(Sampler_T):
+class MaternClusterPointSampler_T(PointProcess_T):
     lambda_parent: int = 10  # density of parent Poisson point process
     lambda_daughter: int = 100  # mean number of points in each cluster
     cluster_radius: float = 0.1  # radius of cluster disk (for daughter points) 
@@ -397,7 +406,7 @@ class MaternClusterPointSampler_T(Sampler_T):
             assert len(self.warp) == self.randomization_space, "warp parameter must be of same length as the randomization space."
 
 @dataclasses.dataclass
-class HardCoreMaternClusterPointSampler_T(Sampler_T):
+class HardCoreMaternClusterPointSampler_T(PointProcess_T):
     lambda_parent: int = 10  # density of parent Poisson point process
     lambda_daughter: int = 100  # mean number of points in each cluster
     cluster_radius: float = 0.1  # radius of cluster disk (for daughter points) 
@@ -413,7 +422,7 @@ class HardCoreMaternClusterPointSampler_T(Sampler_T):
             assert len(self.warp) == self.randomization_space, "warp parameter must be of same length as the randomization space."
 
 @dataclasses.dataclass
-class ThomasClusterSampler_T(Sampler_T):
+class ThomasClusterSampler_T(PointProcess_T):
     lambda_parent: int = 10  # density of parent Poisson point process
     lambda_daughter: int = 100  # mean number of points in each cluster
     sigma: float = 0.05
@@ -427,7 +436,7 @@ class ThomasClusterSampler_T(Sampler_T):
             assert len(self.warp) == self.randomization_space, "warp parameter must be of same length as the randomization space."
 
 @dataclasses.dataclass
-class HardCoreThomasClusterSampler_T(Sampler_T):
+class HardCoreThomasClusterSampler_T(PointProcess_T):
     lambda_parent: int = 10  # density of parent Poisson point process
     lambda_daughter: int = 100  # mean number of points in each cluster
     sigma: float = 0.05 
@@ -443,7 +452,7 @@ class HardCoreThomasClusterSampler_T(Sampler_T):
             assert len(self.warp) == self.randomization_space, "warp parameter must be of same length as the randomization space."
 
 @dataclasses.dataclass
-class PoissonPointSampler_T(Sampler_T):
+class PoissonPointSampler_T(PointProcess_T):
     lambda_poisson: int = 100  # density of parent Poisson point process
 
     def __post_init__(self):
@@ -467,3 +476,64 @@ class LinearInterpolationSampler_T(Sampler_T):
 #@dataclasses.dataclass
 #class NormalMapSampler_T(Sampler_T):
 #    func: function = lambda x:x
+
+##################################
+#                                #
+#           PARAMETERS           # 
+#                                #
+##################################
+
+@dataclasses.dataclass
+class Parameter_T:
+    name: str = "base_parameter"
+    dimension: int = 0
+    p_type: type = int
+    components: tuple = ()
+
+@dataclasses.dataclass
+class Position_T(Parameter_T):
+    name: str = "position"
+    dimension: int = 3
+    p_type: type = float
+    components: tuple = ("x","y","z")
+    index_mapping: dict = None
+    attribute_name: str = "xformOp:translation"
+    default_value: tuple = (0.0,0.0,0.0)
+
+    def __post_init__(self):
+        self.index_mapping = {"x":0,"y":1,"z":2}
+
+@dataclasses.dataclass
+class Scale_T(Parameter_T):
+    name: str = "scale"
+    dimension: int = 3
+    p_type: type = float
+    components: tuple = ("x", "y", "z")
+    index_mapping: dict = None
+    attribute_name: str = "xformOp:scale"
+    default_value: tuple = (1.0,1.0,1.0)
+
+    def __post_init__(self):
+        self.index_mapping = {"x":0,"y":1,"z":2}
+
+@dataclasses.dataclass
+class Orientation_T(Parameter_T):
+    name: str = "orientation"
+    dimension: int = 4
+    p_type: type = float
+    components: tuple = ("x", "y", "z", "w")
+    index_mapping: dict = None
+    attribute_name: str = "xformOp:orientation"
+    default_value: tuple = (0,0,0,0) # Should be (0,0,0,1) but quaternions should be randomized all at once.
+
+    def __post_init__(self):
+        self.index_mapping = {"x":1,"y":2,"z":3,"w":0}
+
+@dataclasses.dataclass
+class UserRequest_T:
+    p_type: Parameter_T = Parameter_T()
+    sampler: Sampler_T = None
+    layer: Layer_T = None
+    axes: list = None
+
+SupportedParameters = {"position": Position_T,"scale": Scale_T, "orientation": Orientation_T}
