@@ -11,9 +11,10 @@ line2 = Line_T(xmin=0.5, xmax=1)
 
 skip01 = True
 skip02 = True
+skip03 = True
 # Example 0.1: 2 requests.
 # Duplicate axes requested in two different requests.
-# Will throw an error
+# Will throw an error.
 if not skip01:
     req_pos2 = UserRequest_T(p_type = Position_T(), sampler=uni2, layer=plane, axes=["x","y"])
     req_pos1 = UserRequest_T(p_type = Position_T(), sampler=uni1, layer=line, axes=["y"])
@@ -25,11 +26,21 @@ if not skip01:
 
 # Example 0.2: 1 request.
 # Duplicate axes requested in a single request.
-# Will throw an error
+# Will throw an error.
 if not skip02:
     req_scale = UserRequest_T(p_type = Scale_T(), sampler=uni1, layer=line2, axes=["xzz"])
 
     requests = [req_scale]
+
+    mixer = RequestMixer(requests)
+    attributes = mixer.executeGraph(10)
+
+# Example 3.3: 1 request
+# The user request to project a plane on the y axis alone which is not possible.
+# Will throw an error.
+if not skip03:
+    req_pos1 = UserRequest_T(p_type = Position_T(), sampler=uni2, layer=plane, axes=["y"])
+    requests = [req_pos1]
 
     mixer = RequestMixer(requests)
     attributes = mixer.executeGraph(10)
@@ -79,11 +90,21 @@ mixer = RequestMixer(requests)
 attributes = mixer.executeGraph(10)
 
 
-# Example 3: 2 requests
+# Example 3.1: 2 requests
 # the z axis in the position is not set by the user. It should default to its default value 0.
 # the y axis in the scale is not set by the user. It should default to its default value 1.
 req_pos1 = UserRequest_T(p_type = Position_T(), sampler=uni2, layer=plane, axes=["x","y"])
 req_scale = UserRequest_T(p_type = Scale_T(), sampler=uni1, layer=line2, axes=["xz"])
+requests = [req_pos1, req_scale]
+
+mixer = RequestMixer(requests)
+attributes = mixer.executeGraph(10)
+
+# Example 3.2: 2 requests
+# the x and z axes in the position is not set by the user. It should default to its default value 0.
+# the y and z axes in the scale is not set by the user. It should default to its default value 1.
+req_pos1 = UserRequest_T(p_type = Position_T(), sampler=uni1, layer=line, axes=["y"])
+req_scale = UserRequest_T(p_type = Scale_T(), sampler=uni1, layer=line2, axes=["x"])
 requests = [req_pos1, req_scale]
 
 mixer = RequestMixer(requests)
