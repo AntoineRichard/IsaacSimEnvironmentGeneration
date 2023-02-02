@@ -354,7 +354,7 @@ class Sampler_T:
         assert type(self.randomization_space) is int, "randomization_space must be an int."
 
 @dataclasses.dataclass
-class PointProcess_T:
+class PointProcess_T(Sampler_T):
     is_point_process = True
 
 class HardCore_T:
@@ -400,8 +400,6 @@ class MaternClusterPointSampler_T(PointProcess_T):
 
     def __post_init__(self):
         super().__post_init__()
-        assert type(self.lambda_parent) is int, "lambda_parent must be an int."
-        assert type(self.lambda_daughter) is int, "lambda_daughter must be an int."
         if self.warp is not None:
             assert len(self.warp) == self.randomization_space, "warp parameter must be of same length as the randomization space."
 
@@ -416,8 +414,6 @@ class HardCoreMaternClusterPointSampler_T(PointProcess_T):
 
     def __post_init__(self):
         super().__post_init__()
-        assert type(self.lambda_parent) is int, "lambda_parent must be an int."
-        assert type(self.lambda_daughter) is int, "lambda_daughter must be an int."
         if self.warp is not None:
             assert len(self.warp) == self.randomization_space, "warp parameter must be of same length as the randomization space."
 
@@ -430,8 +426,6 @@ class ThomasClusterSampler_T(PointProcess_T):
 
     def __post_init__(self):
         super().__post_init__()
-        assert type(self.lambda_parent) is int, "lambda_parent must be an int."
-        assert type(self.lambda_daughter) is int, "lambda_daughter must be an int."
         if self.warp is not None:
             assert len(self.warp) == self.randomization_space, "warp parameter must be of same length as the randomization space."
 
@@ -446,8 +440,6 @@ class HardCoreThomasClusterSampler_T(PointProcess_T):
 
     def __post_init__(self):
         super().__post_init__()
-        assert type(self.lambda_parent) is int, "lambda_parent must be an int."
-        assert type(self.lambda_daughter) is int, "lambda_daughter must be an int."
         if self.warp is not None:
             assert len(self.warp) == self.randomization_space, "warp parameter must be of same length as the randomization space."
 
