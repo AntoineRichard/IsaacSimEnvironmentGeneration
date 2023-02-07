@@ -1,6 +1,9 @@
 # Heightmap to Mesh
 
 The modules inside this code aim at easily generating meshes from Digital Elevation Maps (DEMs) and matching RGB textures.
+| Moon DEM | Vineyard DEM + texture |
+|:-------:|:------:|
+![alt text](demos/moon.png) | ![alt text](demos/vineyard.png)
 
 ## How to use
 
@@ -18,12 +21,12 @@ There are two parameters for that:
 
 Then you need to set the decimation algorithm you want to use. This is achieved by setting the `--decimation_mode` argument, as of now there are 4 options:
  - `default`: No decimation, takes the raw image and generates a mesh from it.
- - `point`: The point-based strategy sets the cell at the minimum height of the cell's points. Practical decimation tool as it creates regular cells. 
+ - `point`: The point-based strategy sets the cell at the minimum height of the cell's points. Practical decimation tool as it creates regular cells. Associated parameters: (Note that you can only use num_cells_x, num_cell_y, OR cells_fx, cells_fy, but not both at the same time.)
     - `num_cells_x`: The number of cell to be used along the x axis. This will force the resulting mesh to only have N cells along the x axis.
     - `num_cells_y`: The number of cell to be used along the x axis. This will force the resulting mesh to only have N cells along the y axis.
     - `cells_fx`: The decimation ratio along the x axis. Equivalent to rescaling fxfy in opencv.
     - `cells_fy`: The decimation ratio along the y axis. Equivalent to rescaling fxfy in opencv.
- - `cell`: The cell-based strategies sample the interior of the cell and place the cell at the minimum height of the cell's sampled interior points. Practical decimation tool as it creates regular cells.
+ - `cell`: The cell-based strategies sample the interior of the cell and place the cell at the minimum height of the cell's sampled interior points. Practical decimation tool as it creates regular cells. Associated parameters: (Note that you can only use num_cells_x, num_cell_y, OR cells_fx, cells_fy, but not both at the same time.)
     - `num_cells_x`: The number of cell to be used along the x axis. This will force the resulting mesh to only have N cells along the x axis.
     - `num_cells_y`: The number of cell to be used along the x axis. This will force the resulting mesh to only have N cells along the y axis.
     - `cells_fx`: The decimation ratio along the x axis. Equivalent to rescaling fxfy in opencv.
@@ -37,6 +40,10 @@ With this decided you can select in which format you want the mesh to be saved t
 
 Please note that if you want to apply textures afterwards it may be beneficial to generate the UV maps during the mesh generation process.
 This can be done by adding the following argument: `--generate_uvs 1`
+
+Some simulator / game-engine can benefit from cutting down the main mesh into smaller meshes, thus we provide a built-in tool to do the cutting. Please note that it also cuts the texture properly such that it lines up well when the map is cutted into tiles.
+ - `--cut_subtiles 1`: enables the tiling process
+ - `subtile_size`: is used to set the size of the tiles. The size is specified in meters, which means that it's directly tied to the xy_resolution and size of the image used as DEM.
 
 Bellow are examples of how to use this module:
 Single DEM, STL, with a 10pixels per meter resolution, and a downscale of z by a factor of 2:
@@ -98,7 +105,7 @@ python3 heightmap_to_meshes.py --dems PATH_TO_DEM\
                                --num_cells_x 1000\
                                --num_cells_y 1000
 ```
-Batch DEM, rescaled, OBJ, UVs, greedy decimation:
+Batch DEM, rescaled, OBJ, UVs, greedy decimation, tile cutting:
 ```
 python3 heightmap_to_meshes.py --dems PATH_TO_DEM1 PATH_TO_DEM2 PATH_TO_DEM3\
                                --save_paths FOLDER_TO_SAVE_TO1 FOLDER_TO_SAVE_TO2 FOLDER_TO_SAVE_TO3\
@@ -108,5 +115,7 @@ python3 heightmap_to_meshes.py --dems PATH_TO_DEM1 PATH_TO_DEM2 PATH_TO_DEM3\
                                --z_scale 0.5\
                                --decimation_mode point\
                                --num_cells_x 1000\
-                               --num_cells_y 1000
+                               --num_cells_y 1000\
+                               --cut_subtiles 1\
+                               --subtile_size 10
 ```
