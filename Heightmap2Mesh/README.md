@@ -1,6 +1,9 @@
 # Heightmap to Mesh
 
 The modules inside this code aim at easily generating meshes from Digital Elevation Maps (DEMs) and matching RGB textures.
+| Moon DEM | Vineyard DEM + texture |
+|:-------:|:------:|
+![alt text](demos/moon.png) | ![alt text](demos/vineyard.png)
 
 ## How to use
 
