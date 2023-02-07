@@ -18,12 +18,12 @@ There are two parameters for that:
 
 Then you need to set the decimation algorithm you want to use. This is achieved by setting the `--decimation_mode` argument, as of now there are 4 options:
  - `default`: No decimation, takes the raw image and generates a mesh from it.
- - `point`: The point-based strategy sets the cell at the minimum height of the cell's points. Practical decimation tool as it creates regular cells. 
+ - `point`: The point-based strategy sets the cell at the minimum height of the cell's points. Practical decimation tool as it creates regular cells. Associated parameters: (Note that you can only use num_cells_x, num_cell_y, OR cells_fx, cells_fy, but not both at the same time.)
     - `num_cells_x`: The number of cell to be used along the x axis. This will force the resulting mesh to only have N cells along the x axis.
     - `num_cells_y`: The number of cell to be used along the x axis. This will force the resulting mesh to only have N cells along the y axis.
     - `cells_fx`: The decimation ratio along the x axis. Equivalent to rescaling fxfy in opencv.
     - `cells_fy`: The decimation ratio along the y axis. Equivalent to rescaling fxfy in opencv.
- - `cell`: The cell-based strategies sample the interior of the cell and place the cell at the minimum height of the cell's sampled interior points. Practical decimation tool as it creates regular cells.
+ - `cell`: The cell-based strategies sample the interior of the cell and place the cell at the minimum height of the cell's sampled interior points. Practical decimation tool as it creates regular cells. Associated parameters: (Note that you can only use num_cells_x, num_cell_y, OR cells_fx, cells_fy, but not both at the same time.)
     - `num_cells_x`: The number of cell to be used along the x axis. This will force the resulting mesh to only have N cells along the x axis.
     - `num_cells_y`: The number of cell to be used along the x axis. This will force the resulting mesh to only have N cells along the y axis.
     - `cells_fx`: The decimation ratio along the x axis. Equivalent to rescaling fxfy in opencv.
