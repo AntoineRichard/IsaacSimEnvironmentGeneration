@@ -182,6 +182,8 @@ def objExporter(polydata: vtk.vtkPolyData, save_path: str, image: vtk.vtkImageDa
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
     actor.SetTexture(texture)
+    actor.GetProperty().SetAmbientColor([1,1,1])
+    actor.GetProperty().SetAmbient(1)
     # Creates a render window to be able to save the OBJ.
     ren = vtk.vtkRenderer()
     renWin = vtk.vtkRenderWindow()
