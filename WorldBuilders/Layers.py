@@ -279,7 +279,8 @@ class DiskLayer(Layer2D):
     def sample(self, num: int = 1) -> np.ndarray([]):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
 
-        r = self._layer_cfg.radius_min + np.sqrt(rand[:,0]) * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
+        r_rescaled = (self._layer_cfg.radius_min + rand[:,0] * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)) / self._layer_cfg.radius_max
+        r = np.sqrt(r_rescaled) * self._layer_cfg.radius_max
         t = self._layer_cfg.theta_min + rand[:,1] * (self._layer_cfg.theta_max - self._layer_cfg.theta_min)
 
         x = self._layer_cfg.center[0] + np.cos(t)*r*self._layer_cfg.alpha
@@ -360,7 +361,8 @@ class SphereLayer(Layer3D):
     def sample(self, num:int = 1) -> np.ndarray([]):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
 
-        r = self._layer_cfg.radius_min + np.sqrt(rand[:,0]) * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)
+        r_rescaled = (self._layer_cfg.radius_min + rand[:,0] * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)) / self._layer_cfg.radius_max
+        r = np.sqrt(r_rescaled) * self._layer_cfg.radius_max
         t = self._layer_cfg.theta_min + rand[:,1] * (self._layer_cfg.theta_max - self._layer_cfg.theta_min)
         p = self._layer_cfg.phi_min + rand[:,2] * (self._layer_cfg.phi_max - self._layer_cfg.phi_min)
 
@@ -411,7 +413,8 @@ class CylinderLayer(Layer3D):
     def sample(self, num: int = 1) -> np.ndarray([]):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
 
-        r = self._layer_cfg.radius_min + (self._layer_cfg.radius_max - self._layer_cfg.radius_min)*np.sqrt(rand[:,0])
+        r_rescaled = (self._layer_cfg.radius_min + rand[:,0] * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)) / self._layer_cfg.radius_max
+        r = np.sqrt(r_rescaled) * self._layer_cfg.radius_max
         h = self._layer_cfg.height_min + (self._layer_cfg.height_max - self._layer_cfg.height_min)*rand[:,1]
         theta = np.pi*2*rand[:,2]
 
@@ -463,7 +466,8 @@ class ConeLayer(Layer3D):
     def sample(self, num: int = 1) -> np.ndarray([]):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
 
-        r = self._layer_cfg.radius_min + (self._layer_cfg.radius_max - self._layer_cfg.radius_min)*np.sqrt(rand[:,0])
+        r_rescaled = (self._layer_cfg.radius_min + rand[:,0] * (self._layer_cfg.radius_max - self._layer_cfg.radius_min)) / self._layer_cfg.radius_max
+        r = np.sqrt(r_rescaled) * self._layer_cfg.radius_max
         h = np.power(rand[:,1],1/3)
         theta = np.pi*2*rand[:,2]
 
@@ -516,9 +520,11 @@ class TorusLayer(Layer3D):
     def sample(self, num: int = 1) -> np.ndarray([]):
         rand = self._sampler(num=num, bounds=self._bounds, area=self._area)
 
-        r2 = self._layer_cfg.radius2_min + np.sqrt(rand[:,0]) * (self._layer_cfg.radius2_max - self._layer_cfg.radius2_min)
+        r2_rescaled = (self._layer_cfg.radius2_min + rand[:,0] * (self._layer_cfg.radius2_max - self._layer_cfg.radius2_min)) / self._layer_cfg.radius2_max
+        r2 = np.sqrt(r2_rescaled) * self._layer_cfg.radius2_max
         t = self._layer_cfg.theta1_min + rand[:,1] * (self._layer_cfg.theta1_max - self._layer_cfg.theta1_min)
         p = self._layer_cfg.theta2_min + rand[:,2] * (self._layer_cfg.theta2_max - self._layer_cfg.theta2_min)
+
         x = self._layer_cfg.center[0] + self._layer_cfg.radius1*np.cos(t) + r2*np.cos(t)*np.sin(p)*self._layer_cfg.alpha
         y = self._layer_cfg.center[1] + self._layer_cfg.radius1*np.sin(t) + r2*np.sin(t)*np.sin(p)*self._layer_cfg.beta
         z = self._layer_cfg.center[2] + np.cos(p)*r2*self._layer_cfg.ceta
