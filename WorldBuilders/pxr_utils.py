@@ -94,7 +94,7 @@ def createInstancerAndCache(stage, path, asset_list):
     # Set some dummy parameters
     setInstancerParameters(stage, path, pos=np.zeros((1,3))) 
 
-def setInstancerParameters(stage, path, pos, ids = None, scale = None, quat = None):
+def setInstancerParameters(stage, path, pos: np.ndarray([],dtype=np.float), ids: np.ndarray([],dtype=int) = None, scale: np.ndarray([],dtype=np.float) = None, quat: np.ndarray([],dtype=np.float) = None):
     num = pos.shape[0]
     instancer_prim = stage.GetPrimAtPath(path)
     num_prototypes = len(instancer_prim.GetRelationship("prototypes").GetTargets())
