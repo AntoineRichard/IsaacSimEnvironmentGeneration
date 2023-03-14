@@ -4,7 +4,7 @@ import omni
 import os
 from omni.isaac.kit import SimulationApp
 
-def assembleMap(folder, output_path, terrain_root = "/terrain", texture_path="../../../Textures/Sand.mdl", texture_name="Sand"):
+def assembleMap(folder, output_path, texture_path, terrain_root = "/terrain", texture_name="Sand"):
     files = os.listdir(folder)
     pu.newStage()
     stage = omni.usd.get_context().get_stage()
@@ -21,16 +21,16 @@ def assembleMap(folder, output_path, terrain_root = "/terrain", texture_path="..
             file_path = os.path.join(folder, file)
             pu.createObject(os.path.join(terrain_root, name), stage, file_path, Gf.Vec3d(x_coord, y_coord, 0))
     terrain = stage.GetPrimAtPath(terrain_root)
-    #pu.applyMaterial(terrain, material)
+    # pu.applyMaterial(terrain, material)
     pu.setDefaultPrim(stage, terrain_root)
     pu.saveStage(output_path)
     pu.closeStage()
 
-def processFolders(folders, map_path):
+def processFolders(folders, map_path, tex_path):
     for folder in folders:
         assert os.path.exists(folder), "Path to folder: "+folder+" does not exist. Please correct it."
         name = folder.split("/")[-1]
-        assembleMap(folder, output_path=os.path.join(map_path,name+".usd"))
+        assembleMap(folder, output_path=os.path.join(map_path,name+".usd"), texture_path=tex_path)
         
 
 if __name__ == "__main__":
@@ -45,11 +45,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--maps_path", type=str, default=None, help="The path where the maps will be stored."
     )
+    parser.add_argument("--tex_path", type=str, default=None)
     args, unknown_args = parser.parse_known_args()
 
     if args.folders is None:
         raise ValueError(f"No folders specified via --folders argument")
 
-    processFolders(args.folders, args.maps_path)
+    processFolders(args.folders, args.maps_path, args.tex_path)
 
     kit.close()

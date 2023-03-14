@@ -1,3 +1,6 @@
 __pycache__/
 *.py[cod]
 *.swp
+DEM
+isaac_mesh
+mesh

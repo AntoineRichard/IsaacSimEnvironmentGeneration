@@ -14,9 +14,13 @@ from omni.isaac.core.materials import PreviewSurface
 my_world = World(stage_units_in_meters=1.0)
 stage = omni.usd.get_context().get_stage()
 
+root_dir = "/home/lunar4/jnskkmhr/omn_asset"
+asset_path = "rock_model"
+assets = os.listdir(os.path.join(root_dir, asset_path))
+assets = [os.path.join(os.path.join(root_dir, asset_path), asset) for asset in assets if asset.split('.')[-1]=="usd"]
 
-assets = os.listdir("/home/antoine/Documents/Moon/IsaacSimulationFramework/SimulationEnvironments/Moon/Rocks/RoundRocks_USD_clean")
-assets = [os.path.join("/home/antoine/Documents/Moon/IsaacSimulationFramework/SimulationEnvironments/Moon/Rocks/RoundRocks_USD_clean", asset) for asset in assets]
+# assets = os.listdir("/home/antoine/Documents/Moon/IsaacSimulationFramework/SimulationEnvironments/Moon/Rocks/RoundRocks_USD_clean")
+# assets = [os.path.join("/home/antoine/Documents/Moon/IsaacSimulationFramework/SimulationEnvironments/Moon/Rocks/RoundRocks_USD_clean", asset) for asset in assets]
 createInstancerAndCache(stage, "/rings1", assets)
 
 
