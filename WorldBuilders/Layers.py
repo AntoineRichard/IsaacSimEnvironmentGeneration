@@ -4,7 +4,7 @@ from Samplers import *
 from Clippers import *
 import copy
 
-CLIPPER_CFG = ["Image_T"]
+CLIPPER_CFG = ["Image_T", "NormalMap_T"]
 
 class BaseLayer:
     def __init__(self, layer_cfg: Layer_T, sampler_cfg: Sampler_T, **kwarg) -> None:
@@ -156,6 +156,23 @@ class ImageLayer(Layer1D):
     Class which is similar with LineLayer
     But, do not specify bound, since the bound is determined by height image.
     """
+    def __init__(self, layer_cfg: Layer_T, sampler_cfg: Sampler_T) -> None:
+        super().__init__(layer_cfg, sampler_cfg)
+        self.initializeSampler()
+    
+    def getBounds(self):
+        self._bounds = None
+
+    def sample(self, query_point: np.ndarray, num: int = 1):
+        return self._sampler(num=num, bounds=self._bounds, query_point=query_point)
+    
+    def __call__(self, query_point: np.ndarray, num: int = 1) -> np.ndarray([]):
+        points = self.sample(num = num, query_point=query_point)
+        points = self.project(points)
+        points = self.transform(points)
+        return points
+
+class NormalMapLayer(Layer4D):
     def __init__(self, layer_cfg: Layer_T, sampler_cfg: Sampler_T) -> None:
         super().__init__(layer_cfg, sampler_cfg)
         self.initializeSampler()
@@ -580,6 +597,7 @@ Layer_Factory.register("Cylinder_T", CylinderLayer)
 Layer_Factory.register("Cone_T", ConeLayer)
 Layer_Factory.register("Torus_T", TorusLayer)
 Layer_Factory.register("Image_T", ImageLayer)
+Layer_Factory.register("NormalMap_T", NormalMapLayer)
 
 
 #class Spline(Layer1D):

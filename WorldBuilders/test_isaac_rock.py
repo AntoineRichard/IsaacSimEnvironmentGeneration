@@ -35,32 +35,38 @@ xmax = (W//2)*mpp
 ymin = -(H//2)*mpp
 ymax = (H//2)*mpp
 rng = np.random.default_rng(seed=42)
-# data = rng.standard_normal((H, W), dtype=np.float64)
-data = np.ones((H, W), dtype=np.float64)
+data = rng.standard_normal((H, W), dtype=np.float64)
+# data = np.ones((H, W), dtype=np.float64)
 
-# thomas_cluster = ThomasClusterSampler_T(lambda_parent=1.0, lambda_daughter=100.0, sigma=0.05, warp=None, randomization_space=2, seed=77)
+
 normal_sampler = NormalSampler_T(mean=(0.0, 0.0), std=(5.0, 5.0), randomization_space=2, seed=77)
-# matern3_polar = MaternClusterPointSampler_T(lambda_parent=0.0005, lambda_daughter=100.0, cluster_radius=0.1, randomization_space=3, use_rejection_sampling=False, warp=(0.1, 2*np.pi, 2*np.pi))
-image_layer = Image_T(output_space=1)
-image_clipper = ImageClipper_T(randomization_space=1, resolution=(H, W), mpp_resolution=mpp, data=data)
 plane = Plane_T(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, output_space=2)
+
+image_layer = Image_T(output_space=1)
+image_clipper = ImageClipper_T(randomization_space=1, resolution=(H, W), mpp_resolution=mpp, data=data) #only z
+
+normalmap_layer = NormalMap_T(output_space=4)
+normalmap_clipper = NormalMapClipper_T(randomization_space=4, resolution=(H, W), mpp_resolution=mpp, data=data)
+
 uni1 = UniformSampler_T(randomization_space=1)
 line = Line_T(xmin=0.2, xmax=0.6)
+
 req_pos1 = UserRequest_T(p_type = Position_T(), sampler=normal_sampler, layer=plane, axes=["x","y"])
 req_pos2 = UserRequest_T(p_type = Position_T(), sampler=image_clipper, layer=image_layer, axes=["z"])
+req_ori = UserRequest_T(p_type = Orientation_T(), sampler=normalmap_clipper, layer=normalmap_layer, axes=["x", "y", "z", "w"])
 req_scale = UserRequest_T(p_type = Scale_T(), sampler=uni1, layer=line, axes=["xyz"])
-requests = [req_pos1, req_pos2, req_scale]
+requests = [req_pos1, req_pos2, req_ori, req_scale]
+# requests = [req_pos1, req_pos2, req_scale]
 mixer = RequestMixer(requests)
 
-attributes = mixer.executeGraph(10)
+num = 10
+attributes = mixer.executeGraph(num)
 position = attributes["xformOp:translation"]
 scale = attributes["xformOp:scale"]
-setInstancerParameters(stage, "/rocks", position, scale=scale)
+orientation = attributes["xformOp:orientation"]
+setInstancerParameters(stage, "/rocks", pos=position, quat=orientation, scale=scale)
 
 while(True):
     my_world.step(render=True)
 
 simulation_app.close()
-
-
-# how to implement height value clipping functionality based on heightmap

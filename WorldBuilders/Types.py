@@ -314,10 +314,13 @@ class Torus_T(Layer_T):
 @dataclasses.dataclass
 class Image_T(Layer_T):
     """
-    resolution : (H, W) of image
-    mpp_resolution : meter per pixel resolution
-    data : numpy.ndarray image data
-    output_space : output dimension of sample method
+    No information needs to be passed
+    """
+
+@dataclasses.dataclass
+class NormalMap_T(Layer_T):
+    """
+    No information needs to be passed
     """
 
 #@dataclasses.dataclass
@@ -464,13 +467,25 @@ class LinearInterpolationSampler_T(Sampler_T):
 
 @dataclasses.dataclass
 class ImageClipper_T(Sampler_T):
-   resolution: tuple = (1, 1)
-   mpp_resolution: float = 1.0
-   data: np.ndarray([]) = None
+    """
+    resolution : pixel resolution
+    mpp_resolutin : meter per pixel resolution
+    data : Image in numpy ndarray
+    """
+    resolution: tuple = (1, 1)
+    mpp_resolution: float = 1.0
+    data: np.ndarray([]) = None
 
-#@dataclasses.dataclass
-#class NormalMapSampler_T(Sampler_T):
-#    func: function = lambda x:x
+@dataclasses.dataclass
+class NormalMapClipper_T(Sampler_T):
+    """
+    resolution : pixel resolution
+    mpp_resolutin : meter per pixel resolution
+    data : Gradient map in numpy ndarray
+    """
+    resolution: tuple = (1, 1)
+    mpp_resolution: float = 1.0
+    data: np.ndarray([]) = None
 
 ##################################
 #                                #
