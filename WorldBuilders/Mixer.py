@@ -37,7 +37,7 @@ class RequestMixer:
                 requests_per_type[req.p_type.name] = [req]
         # For each requested parameter type, check for axes errors
         point_processes = 0
-        self.height_clip_id = None #initialize clip function
+        self.height_clip_id = None #initialize clip function flag
         self.orient_clip_id = None
         for reqs_key in requests_per_type.keys():
             axes = []
@@ -49,10 +49,10 @@ class RequestMixer:
                     self.point_process_attr = req.p_type.attribute_name
                     point_process_idx = i
                 if isinstance(req.sampler, ImageClipper_T):
-                    # raise flag when image clipper appear
+                    # raise flag when image clipper is processed
                     self.height_clip_id = i
                 if isinstance(req.sampler, NormalMapClipper_T):
-                    # raise flag when normalmap clipper appear
+                    # raise flag when normalmap clipper is processed
                     self.orient_clip_id = i
                 for axis in "".join(req.axes):
                     axes.append(axis)
@@ -68,7 +68,8 @@ class RequestMixer:
 
     def buildExecutionGraph(self):
         """
-        self.execution_graph : 
+        return
+        self.execution_graph:dict : 
         {
             "attribute1": [request1, request2, ...]
             "attribute2": [request1, request2, ...]
@@ -111,7 +112,6 @@ class RequestMixer:
 
     def executeGraph(self, num):
         output = {}
-
         attributes = self.execution_graph
         if self.point_process_attr is not None:
             tmp = [self.point_process_attr]
@@ -128,17 +128,18 @@ class RequestMixer:
             to_exec = self.execution_graph[attribute]
             p_list = []
             for j in range(len(to_exec["meta_layer"])):
-                if attribute == "xformOp:translation" and j == self.height_clip_id:
+                if attribute == "xformOp:translation" and j == self.height_clip_id: #set z value DEM(x, y)
                     assert points is not None, "height clip must be called after sampling x, y position"
+                    assert points.shape[-1] == 2, "2 dimensional vector is only allowed as an query point"
                     query_points = copy.deepcopy(points) #store sampled x, y 
-                    points = to_exec["meta_layer"][j](query_point=query_points, num=num) #"sample" method of sampler is called here.
+                    points = to_exec["meta_layer"][j](query_point=query_points, num=num) #"sample" method of image clipper is called here.
                     points = np.stack([points[:,i] for i in to_exec["replicate"][j]]).T
                     current_order += to_exec["order"][j]
                     p_list.append(points)
                 elif attribute == "xformOp:orientation" and j == self.orient_clip_id:
                     assert query_points is not None, "orientation clip must be called after sampling x, y position"
-                    points = to_exec["meta_layer"][j](query_point=query_points, num=num) #"sample" method of sampler is called here.
-                    print(points.shape)
+                    assert points.shape[-1] == 2, "2 dimensional vector is only allowed as an query point"
+                    points = to_exec["meta_layer"][j](query_point=query_points, num=num) #"sample" method of normalmap clipper is called here.
                     points = np.stack([points[:,i] for i in to_exec["replicate"][j]]).T
                     current_order += to_exec["order"][j]
                     p_list.append(points)
@@ -156,6 +157,6 @@ class RequestMixer:
             output[attribute] = points
         # print(type(output['xformOp:translation']))
         # print(output['xformOp:translation'].shape)
-        print(output['xformOp:translation'])
-        print(output['xformOp:orientation'])
+        # print(output['xformOp:translation'])
+        # print(output['xformOp:orientation'])
         return output
