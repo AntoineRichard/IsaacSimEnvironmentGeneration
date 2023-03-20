@@ -34,15 +34,15 @@ addCollision(stage, "/terrain")
 # 1.5 m/pix
 img_path = "/home/lunar4/jnskkmhr/IsaacSimEnvironmentGeneration/DEM/LRO_NAC_DEM_73N350E_150cmp_3500_4000_2000_2500.npy"
 data = np.load(img_path)
+data = np.flip(data, 0)
 # data = np.load("/home/lunar4/jnskkmhr/DEM/generated_tile.npy")
 H, W = data.shape
 mpp = 1.5
-offset = 20
-# need some offset (little bit like 10m) for out of boundary error
-xmin = -((W//2)*mpp - offset)
-xmax = (W//2)*mpp - offset
-ymin = -((H//2)*mpp - offset)
-ymax = (H//2)*mpp -offset
+
+xmin = 0.0
+xmax = H * mpp
+ymin = 0.0
+ymax = W * mpp
 
 # sampler = NormalSampler_T(mean=(0.0, 0.0), std=(xmax/2, ymax/2), randomization_space=2, seed=77)
 sampler = UniformSampler_T(min=(xmin, ymin), max=(xmax, ymax), randomization_space=2, seed=77)

@@ -157,6 +157,6 @@ class RequestMixer:
             output[attribute] = points
         # print(type(output['xformOp:translation']))
         # print(output['xformOp:translation'].shape)
-        # print(output['xformOp:translation'])
-        # print(output['xformOp:orientation'])
+        print(output['xformOp:translation'])
+        print(output['xformOp:orientation'])
         return output
