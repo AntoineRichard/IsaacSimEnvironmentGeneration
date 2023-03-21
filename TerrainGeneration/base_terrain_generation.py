@@ -20,8 +20,8 @@ def assembleMap(folder, output_path, texture_path, terrain_root = "/terrain", te
         if extenstion.lower() == "usd":
             file_path = os.path.join(folder, file)
             pu.createObject(os.path.join(terrain_root, name), stage, file_path, Gf.Vec3d(x_coord, y_coord, 0))
-    terrain = stage.GetPrimAtPath(terrain_root)
-    # pu.applyMaterial(terrain, material)
+            # terrain = stage.GetPrimAtPath(os.path.join(terrain_root, name))
+            # pu.applyMaterial(terrain.GetPrim(), material)
     pu.setDefaultPrim(stage, terrain_root)
     pu.saveStage(output_path)
     pu.closeStage()
