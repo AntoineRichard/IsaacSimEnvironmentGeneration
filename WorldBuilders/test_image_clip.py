@@ -5,11 +5,36 @@ import os
 simulation_app = SimulationApp({"headless": False})
 
 from omni.isaac.core import World
-from pxr_utils import createInstancerAndCache, setInstancerParameters, setRotateXYZ, createObject, addCollision, loadTexture, createStandaloneInstance, createXform
+from pxr_utils import createInstancerAndCache, setInstancerParameters, setRotateXYZ, createObject, addCollision, loadTexture, createStandaloneInstance, createXform, setDefaultPrim
 from Mixer import *
 from Types import *
 import omni
 from pxr import UsdGeom, Sdf, UsdLux, Gf, UsdShade
+
+def assembleMap(folder, stage, terrain_root = "/terrain", texture_path="../../../Textures/Sand.mdl", texture_name="Sand"):
+    files = os.listdir(folder)
+    createXform(stage, terrain_root)
+    texture_path = "/home/lunar4/jnskkmhr/omn_asset/Terrain/Textures/Sand.mdl"
+    material = loadTexture(stage, texture_path, texture_name, terrain_root+'/Looks/')
+    for file in files:
+        extenstion = file.split('.')[-1]
+        if extenstion.lower() != "usd":
+            continue
+        name = file.split('.')[0]
+        y_coord = int(name.split('_')[1])
+        x_coord = int(name.split('_')[2])
+        if extenstion.lower() == "usd":
+            file_path = os.path.join(folder, file)
+            createObject(os.path.join(terrain_root, name), stage, file_path, Gf.Vec3d(x_coord, y_coord, 0))
+    terrain = stage.GetPrimAtPath(terrain_root)
+    #pu.applyMaterial(terrain, material)
+    setDefaultPrim(stage, terrain_root)
+
+def processFolders(folders, stage):
+    for folder in folders:
+        assert os.path.exists(folder), "Path to folder: "+folder+" does not exist. Please correct it."
+        name = folder.split("/")[-1]
+        assembleMap(folder, stage)
 
 root_dir = "/home/lunar4/jnskkmhr/omn_asset" # working directory
 asset_path = "rock_model" # asset root dir
@@ -18,12 +43,15 @@ world = World(stage_units_in_meters=1.0)
 stage = omni.usd.get_context().get_stage()
 
 # load base terrain prim
-terrain_prim_path = os.path.join(root_dir, "Terrain/LRO_NAC_DEM_73N350E_150cmp_3500_4000_2000_2500_USD_clean.usd")
-createObject("/terrain", stage, terrain_prim_path)
-addCollision(stage, "/terrain")
-texture_path = "/home/lunar4/jnskkmhr/omn_asset/Terrain/Textures/Sand.mdl"
-texture_name = "sand"
-material = loadTexture(stage, texture_path, texture_name, '/terrain/Looks/')
+# terrain_prim_path = os.path.join(root_dir, "Terrain2/LRO_NAC_DEM_73N350E_150cmp_0_500_3000_3500_USD_clean.usd")
+# createObject("/terrain", stage, terrain_prim_path)
+# addCollision(stage, "/terrain")
+# texture_path = "/home/lunar4/jnskkmhr/omn_asset/Terrain/Textures/Sand.mdl"
+# texture_name = "Sand"
+# material = loadTexture(stage, texture_path, texture_name, '/terrain/Looks')
+
+terrain_folder = ["/home/lunar4/jnskkmhr/omn_asset/Terrain/LRO_NAC_DEM_73N350E_150cmp_3500_4000_2000_2500_USD_clean"]
+processFolders(terrain_folder, stage)
 
 distant_light = UsdLux.DistantLight.Define(stage, "/sun")
 distant_light.GetIntensityAttr().Set(7000)
@@ -43,7 +71,8 @@ data = np.load(img_path)
 H, W = data.shape
 
 data = np.flip(data, 0)
-base_height = np.min(data) + 0.5 # 0.5 is offset since data - base_height does not give you exact relative position of rock against terrain. (rock is still little bit high)
+# base_height = data[0, 0]
+base_height = np.min(data)+1.0 # 0.5 is offset since data - base_height does not give you exact relative position of rock against terrain. (rock is still little bit high)
 data = data - base_height
 mpp = 1.5
 xmin = 0.0
@@ -86,7 +115,7 @@ requests2 = [req_pos_xy2, req_pos_z2, req_ori2, req_scale2]
 mixer_2 = RequestMixer(requests2)
 
 
-num = 2000
+num = 1000
 attributes1 = mixer_1.executeGraph(num)
 position1 = attributes1["xformOp:translation"]
 scale1 = attributes1["xformOp:scale"]
