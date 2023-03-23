@@ -28,17 +28,19 @@ class HeightClipper(BaseClipper):
 
     def sample(self, query_point:np.ndarray, **kwargs):
         """
-        query point is (x, y) point generated from sampler
+        query point is (x, y) point generated from 2D sampler. 
         """
         x = query_point[:, 0]
         y = query_point[:, 1]
         H, W = self.resolution
-        us = x // self.mpp_resolution + (W // 2) * np.ones_like(x)
-        vs = (H // 2) * np.ones_like(y) - y // self.mpp_resolution
+        # cordinate transformation from xy to image plane
+        us = x // self.mpp_resolution #horizontal
+        vs = H * np.ones_like(y) - y // self.mpp_resolution #vertical
+        ##
         images = []
         for u, v in zip(us, vs):
-            u = int(u)
-            v = int(v)
+            u = int(u) - 1
+            v = int(v) - 1
             images.append(self.image[v, u])
         return np.stack(images)[:, np.newaxis]
 
@@ -65,14 +67,14 @@ class NormalMapClipper(BaseClipper):
         x = query_point[:, 0]
         y = query_point[:, 1]
         H, W = self.resolution
-        us = x // self.mpp_resolution + (W // 2) * np.ones_like(x)
-        vs = (H // 2) * np.ones_like(y) - y // self.mpp_resolution
+        us = x // self.mpp_resolution #horizontal
+        vs = H * np.ones_like(y) - y // self.mpp_resolution #vertical
         quat = []
         for u, v in zip(us, vs):
-            u = int(u)
-            v = int(v)
-            roll = self.slope_x[v, u]
-            pitch = self.slope_y[v, u]
+            u = int(u) - 1
+            v = int(v) - 1
+            roll = self.slope_y[v, u]
+            pitch = self.slope_x[v, u]
             yaw = 0.0
             q = quaternion.as_float_array(quaternion.from_euler_angles([roll, pitch, yaw]))
             quat.append(q)

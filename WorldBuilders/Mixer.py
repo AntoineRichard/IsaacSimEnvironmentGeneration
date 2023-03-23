@@ -138,7 +138,7 @@ class RequestMixer:
                     p_list.append(points)
                 elif attribute == "xformOp:orientation" and j == self.orient_clip_id:
                     assert query_points is not None, "orientation clip must be called after sampling x, y position"
-                    assert points.shape[-1] == 2, "2 dimensional vector is only allowed as an query point"
+                    assert query_points.shape[-1] == 2, "2 dimensional vector is only allowed as an query point"
                     points = to_exec["meta_layer"][j](query_point=query_points, num=num) #"sample" method of normalmap clipper is called here.
                     points = np.stack([points[:,i] for i in to_exec["replicate"][j]]).T
                     current_order += to_exec["order"][j]

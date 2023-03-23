@@ -625,4 +625,3 @@ Layer_Factory.register("NormalMap_T", NormalMapLayer)
 #class Quaternion(Layer4D):
 #    def __init__(self) -> None:
 #        super().__init__()
-
