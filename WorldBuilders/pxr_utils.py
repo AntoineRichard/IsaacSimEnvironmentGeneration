@@ -2,6 +2,7 @@ import omni
 import os
 import numpy as np
 from pxr import UsdGeom, Gf, Sdf, UsdPhysics, UsdShade, Usd, Vt
+from omni.isaac.core.utils.semantics import add_update_semantics
 from omni.physx.scripts import utils
 
 def loadStage(path: str):
@@ -40,7 +41,7 @@ def loadTexture(stage, mdl_path, mdl_name, scene_path):
     return material
 
 def applyMaterial(prim, material):
-    UsdShade.MaterialBindingAPI(prim).Bind(material, UsdShade.Tokens.strongerThanDescendants)
+    UsdShade.MaterialBindingAPI(prim).Bind(material, UsdShade.Tokens.weakerThanDescendants)
 
 def createObject(prefix,
     stage,
@@ -48,7 +49,8 @@ def createObject(prefix,
     position=Gf.Vec3d(0, 0, 0),
     rotation=Gf.Rotation(Gf.Vec3d(0,0,1), 0),
     scale=Gf.Vec3d(1,1,1),
-    is_instance=True,
+    is_instance:bool=True,
+    semantic_label:str=None, 
 ) -> tuple:
     """
     Creates a 3D object from a USD file and adds it to the stage.
@@ -60,6 +62,8 @@ def createObject(prefix,
     xform = UsdGeom.Xformable(obj_prim)
     setScale(xform, scale)
     setTransform(xform, getTransform(rotation, position))
+    if semantic_label:
+        add_update_semantics(prim=obj_prim, semantic_label=semantic_label)
     return obj_prim, prim_path
 
 def addCollision(stage, path, mode="none"):
@@ -79,16 +83,16 @@ def createStandaloneInstance(stage, path):
     instancer = UsdGeom.PointInstancer.Define(stage, path)
     return instancer
 
-def createInstancerAndCache(stage, path, asset_list):
+def createInstancerAndCache(stage, path, asset_list, semantic_label_list):
     # Creates a point instancer
     instancer = createStandaloneInstance(stage, path)
     # Creates a Xform to cache the assets to.
     # This cache must be located under the instancer to hide the cached assets.
     createXform(stage, os.path.join(path,'cache'))
     # Add each asset to the scene in the cache.
-    for asset in asset_list:
+    for i, asset in enumerate(asset_list):
         # Create asset.
-        prim, prim_path = createObject(os.path.join(path,'cache','instance'), stage, asset)
+        prim, prim_path = createObject(os.path.join(path,'cache','instance'), stage, asset, semantic_label=semantic_label_list[i])
         # Add this asset to the list of instantiable objects.
         instancer.GetPrototypesRel().AddTarget(prim_path)
     # Set some dummy parameters

@@ -39,8 +39,8 @@ class HeightClipper(BaseClipper):
         ##
         images = []
         for u, v in zip(us, vs):
-            u = int(u) - 1
-            v = int(v) - 1
+            u = int(u)
+            v = int(v)
             images.append(self.image[v, u])
         return np.stack(images)[:, np.newaxis]
 
@@ -71,8 +71,8 @@ class NormalMapClipper(BaseClipper):
         vs = H * np.ones_like(y) - y // self.mpp_resolution #vertical
         quat = []
         for u, v in zip(us, vs):
-            u = int(u) - 1
-            v = int(v) - 1
+            u = int(u)
+            v = int(v)
             roll = self.slope_y[v, u]
             pitch = self.slope_x[v, u]
             yaw = 0.0
