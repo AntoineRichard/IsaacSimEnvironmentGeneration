@@ -1,15 +1,16 @@
 import argparse
+import os
 import asyncio
 import omni
-import os
 from omni.isaac.kit import SimulationApp
 
-def assembleMap(folder, output_path, texture_path, terrain_root = "/terrain", texture_name="Sand"):
+def assembleMap(folder, output_path, texture_path, terrain_root = "/World/terrain", texture_name="Sand"):
     files = os.listdir(folder)
     pu.newStage()
     stage = omni.usd.get_context().get_stage()
+    pu.createXform(stage, "/World")
     pu.createXform(stage, terrain_root)
-    material = pu.loadTexture(stage, texture_path, texture_name, terrain_root+'/Looks/')
+    material = pu.loadTexture(stage, texture_path, texture_name, 'World/Looks')
     for file in files:
         extenstion = file.split('.')[-1]
         if extenstion.lower() != "usd":
@@ -19,10 +20,11 @@ def assembleMap(folder, output_path, texture_path, terrain_root = "/terrain", te
         x_coord = int(name.split('_')[2])
         if extenstion.lower() == "usd":
             file_path = os.path.join(folder, file)
-            pu.createObject(os.path.join(terrain_root, name), stage, file_path, Gf.Vec3d(x_coord, y_coord, 0))
-            # terrain = stage.GetPrimAtPath(os.path.join(terrain_root, name))
-            # pu.applyMaterial(terrain.GetPrim(), material)
-    pu.setDefaultPrim(stage, terrain_root)
+            z_offset = -44.4 # it seems there is offset between origin of terrain xprim and mesh (lower left corner has (0, 0, 0) position, but mesh is shifted by 44.4 in z axis, so we need to offset it by 44.4 to make it aligned with world origin
+            pu.createObject(os.path.join(terrain_root, name), stage, file_path, Gf.Vec3d(x_coord, y_coord, z_offset), semantic_label='terrain')
+            # terrain_mesh = stage.GetPrimAtPath(os.path.join(terrain_root, name, 'grp1'))
+            # pu.applyMaterial(terrain_mesh, material)
+    # pu.setDefaultPrim(stage, terrain_root)
     pu.saveStage(output_path)
     pu.closeStage()
 

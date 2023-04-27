@@ -2,6 +2,7 @@ import omni
 import os
 import numpy as np
 from pxr import UsdGeom, Gf, Sdf, UsdPhysics, UsdShade, Usd, Vt
+from pxr.Gf import Camera
 from omni.isaac.core.utils.semantics import add_update_semantics
 from omni.physx.scripts import utils
 
@@ -29,6 +30,21 @@ def createXform(stage, path):
     obj_prim = stage.DefinePrim(prim_path, "Xform")
     return obj_prim, prim_path
 
+def createCamera(stage, prim_path, translation, orientation, focal_length, focus_distance):
+    # camera_prim = pxr.UsdGeom.Camera.Define(stage, camera_prim)
+    camera_prim = stage.DefinePrim(prim_path, "Camera")
+    camera = UsdGeom.Camera(camera_prim)
+    # Set camera parameters
+    # camera.SetFocusDistance(focus_distance)
+    # camera.SetFocalLength(focal_length)
+    camera.GetFocalLengthAttr().Set(focal_length)
+    camera.GetFocusDistanceAttr().Set(focus_distance)
+    # Set camera transform
+    camera = UsdGeom.Xformable(camera)
+    setTranslate(camera, translation)
+    setRotateXYZ(camera, orientation)
+    return camera
+
 def loadTexture(stage, mdl_path, mdl_name, scene_path):
     omni.kit.commands.execute(
         "CreateAndBindMdlMaterialFromLibrary",
@@ -47,7 +63,7 @@ def createObject(prefix,
     stage,
     path,
     position=Gf.Vec3d(0, 0, 0),
-    rotation=Gf.Rotation(Gf.Vec3d(0,0,1), 0),
+    rotation=Gf.Vec3d(0, 0, 0), 
     scale=Gf.Vec3d(1,1,1),
     is_instance:bool=True,
     semantic_label:str=None, 
@@ -61,7 +77,10 @@ def createObject(prefix,
         obj_prim.SetInstanceable(True)
     xform = UsdGeom.Xformable(obj_prim)
     setScale(xform, scale)
-    setTransform(xform, getTransform(rotation, position))
+    setTranslate(xform, position)
+    setRotateXYZ(xform, rotation)
+    # better to use translate and rotation so that axis can be visualized in isaac sim app
+    # setTransform(xform, getTransform(rotation, position))
     if semantic_label:
         add_update_semantics(prim=obj_prim, semantic_label=semantic_label)
     return obj_prim, prim_path

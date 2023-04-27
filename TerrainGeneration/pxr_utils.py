@@ -2,6 +2,7 @@ import omni
 import os
 import numpy as np
 from pxr import UsdGeom, Gf, Sdf, UsdPhysics, UsdShade, Usd, Vt
+from omni.isaac.core.utils.semantics import add_update_semantics
 from omni.physx.scripts import utils
 
 def loadStage(path: str):
@@ -46,9 +47,10 @@ def createObject(prefix,
     stage,
     path,
     position=Gf.Vec3d(0, 0, 0),
-    rotation=Gf.Rotation(Gf.Vec3d(0,0,1), 0),
+    rotation=Gf.Vec3d(0, 0, 0),
     scale=Gf.Vec3d(1,1,1),
     is_instance=True,
+    semantic_label:str=None, 
 ) -> tuple:
     """
     Creates a 3D object from a USD file and adds it to the stage.
@@ -59,7 +61,12 @@ def createObject(prefix,
         obj_prim.SetInstanceable(True)
     xform = UsdGeom.Xformable(obj_prim)
     setScale(xform, scale)
-    setTransform(xform, getTransform(rotation, position))
+    setTranslate(xform, position)
+    setRotateXYZ(xform, rotation)
+    # better to use translate and rotation so that axis can be visualized in isaac sim app
+    # setTransform(xform, getTransform(rotation, position))
+    if semantic_label:
+        add_update_semantics(prim=obj_prim, semantic_label=semantic_label)
     return obj_prim, prim_path
 
 def addCollision(stage, path, mode="none"):
