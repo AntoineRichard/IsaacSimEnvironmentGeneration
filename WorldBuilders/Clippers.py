@@ -41,7 +41,7 @@ class HeightClipper(BaseClipper):
         for u, v in zip(us, vs):
             u = int(u)
             v = int(v)
-            images.append(self.image[v, u])
+            images.append(self.image[v-1, u-1])
         return np.stack(images)[:, np.newaxis]
 
 class NormalMapClipper(BaseClipper):
@@ -73,8 +73,8 @@ class NormalMapClipper(BaseClipper):
         for u, v in zip(us, vs):
             u = int(u)
             v = int(v)
-            roll = self.slope_y[v, u]
-            pitch = self.slope_x[v, u]
+            roll = self.slope_y[v-1, u-1]
+            pitch = self.slope_x[v-1, u-1]
             yaw = 0.0
             q = quaternion.as_float_array(quaternion.from_euler_angles([roll, pitch, yaw]))
             quat.append(q)

@@ -30,23 +30,24 @@ def createXform(stage, path):
     obj_prim = stage.DefinePrim(prim_path, "Xform")
     return obj_prim, prim_path
 
-def createCamera(stage, prim_path, camera_name, translation, orientation, focal_length, focus_distance, clipping_range, fov):
+def createCamera(stage, prim_path, camera_name, translation, rotation, focal_length, focus_distance, clipping_range, fov):
     """
     focal_length : in mm
     focus_distance : in m (world unit)
     clipping_range : [min distance, max distance] in m (world unit)
     fov : [horizontal, vertical] in degree
     """
-    camera = UsdGeom.Camera.Define(stage, os.path.join(prim_path, camera_name))
-    camera_parent = stage.GetPrimAtPath(prim_path)
-    # camera_prim, _ = createXform(stage, prim_path)
+    camera_parent, _ = createXform(stage, prim_path)
+    # camera_parent = stage.GetPrimAtPath(prim_path)
     camera_parent = UsdGeom.Xformable(camera_parent)
-    setTranslate(camera_parent, translation)
+    setTranslate(camera_parent, Gf.Vec3d(translation))
     setRotateXYZ(camera_parent, (0.0, 0.0, 0.0))
+
+    camera = UsdGeom.Camera.Define(stage, os.path.join(prim_path, camera_name))
     # Set camera parameters
     camera.GetFocalLengthAttr().Set(focal_length)
     camera.GetFocusDistanceAttr().Set(focus_distance)
-    camera.GetClippingRangeAttr().Set(clipping_range)
+    camera.GetClippingRangeAttr().Set(Gf.Vec2d(clipping_range))
     horizontal_apeture = 2 * focal_length * np.tan(0.5 * np.deg2rad(fov[0])) # in mm
     vertical_apeture = 2 * focal_length * np.tan(0.5 * np.deg2rad(fov[1])) # in mm
     camera.GetHorizontalApertureAttr().Set(horizontal_apeture)
@@ -54,7 +55,7 @@ def createCamera(stage, prim_path, camera_name, translation, orientation, focal_
     # Set camera transform
     camera = UsdGeom.Xformable(camera)
     setTranslate(camera, (0.0, 0.0, 0.0))
-    setRotateXYZ(camera, orientation)
+    setRotateXYZ(camera, Gf.Vec3d(rotation))
     return camera
 
 def loadTexture(stage, mdl_path, mdl_name, scene_path):

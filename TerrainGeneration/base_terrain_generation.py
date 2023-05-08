@@ -5,6 +5,7 @@ import omni
 from omni.isaac.kit import SimulationApp
 
 def assembleMap(folder, output_path, texture_path, terrain_root = "/World/terrain", texture_name="Sand"):
+    from omni.isaac.core.utils.semantics import add_update_semantics
     files = os.listdir(folder)
     pu.newStage()
     stage = omni.usd.get_context().get_stage()
@@ -23,9 +24,15 @@ def assembleMap(folder, output_path, texture_path, terrain_root = "/World/terrai
             file_path = os.path.join(folder, file)
             z_offset = -44.4 # it seems there is offset between origin of terrain xprim and mesh (lower left corner has (0, 0, 0) position, but mesh is shifted by 44.4 in z axis, so we need to offset it by 44.4 to make it aligned with world origin
             pu.createObject(os.path.join(terrain_root, name), stage, file_path, Gf.Vec3d(x_coord, y_coord, z_offset), semantic_label=semantic_label)
-            # terrain_mesh = stage.GetPrimAtPath(os.path.join(terrain_root, name, 'grp1'))
-            # pu.applyMaterial(terrain_mesh, material)
-    # pu.setDefaultPrim(stage, terrain_root)
+    
+    semantic_label = "terrain"
+    terrain = stage.GetPrimAtPath(terrain_root)
+    add_update_semantics(prim=terrain, semantic_label=semantic_label)
+
+    terrain = UsdGeom.Xformable(terrain)
+    setTranslate(terrain, Gf.Vec3d(0.0, 0.0, 0.0))
+    setRotateXYZ(terrain, Gf.Vec3d(0.0, 0.0, 0.0))
+    pu.setDefaultPrim(stage, "/")
     pu.saveStage(output_path)
     pu.closeStage()
 
@@ -40,6 +47,7 @@ if __name__ == "__main__":
     kit = SimulationApp()
     from pxr import UsdGeom, Usd, Gf
     import pxr_utils as pu
+    from pxr_utils import setTranslate, setRotateXYZ
 
     parser = argparse.ArgumentParser("Convert OBJ/STL assets to USD")
     parser.add_argument(

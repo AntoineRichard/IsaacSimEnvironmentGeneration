@@ -1,6 +1,10 @@
 {
-    "focal_length": 1.88, 
-    "fov": [69.4, 42.5],
-    "focus_distance": 10.0, 
-    "clipping_range": [0.2, 10.0]
+    "calibration": {"focal_length": 1.88, 
+                    "fov": [69.4, 42.5],
+                    "focus_distance": 10.0, 
+                    "clipping_range": [0.0105, 10.0]
+                    },
+    "extrinsics": {"translation": [0.0, 0.0, 0.0], 
+                   "rotation": [80.0, 0.0, 0.0]
+                   }
 }
