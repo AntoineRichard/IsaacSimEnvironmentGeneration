@@ -31,7 +31,7 @@ def get_arg():
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--is_save', action='store_true')
-    parser.add_argument('--dem_delta', type=float, default=0.2, help='DEM height delta')
+    parser.add_argument('--dem_delta', type=float, default=-44.1, help='DEM height delta')
     parser.add_argument('--cam_delta', type=float, default=1.0, help='cam height delta')
     args = parser.parse_args()
     return args
@@ -51,24 +51,33 @@ if __name__ == "__main__":
     omni.usd.get_context().open_stage(terrain_prim_path, None)
     simulation_context = SimulationContext(stage_units_in_meters=1.0)
     stage = omni.usd.get_context().get_stage()
-    addCollision(stage, "/World/terrain")
+    addCollision(stage, "/terrain")
 
     # light
-    distant_light = UsdLux.DistantLight.Define(stage, "/World/sun")
+    distant_light = UsdLux.DistantLight.Define(stage, "/sun")
     distant_light.GetIntensityAttr().Set(7000)
     xform = UsdGeom.Xformable(distant_light)
     setRotateXYZ(xform, Gf.Vec3d(0,85.0,0))
 
-    assets_small = ["/home/lunar4/jnskkmhr/omn_asset/rock_model/apollo-lunar-sample-1001715_USD/10017-15_SFM_Web-Resolution-Model_Coordinate-Registered.usd", 
-            "/home/lunar4/jnskkmhr/omn_asset/rock_model/apollo-lunar-sample-1201311_USD/12013-11_SFM_Web-Resolution-Model_Coordinate-Registered.usd", 
-            "/home/lunar4/jnskkmhr/omn_asset/rock_model/apollo-lunar-sample-700178_USD/70017-8_SFM_Web-Resolution-Model_Coordinate-Registered.usd"]
-    semantic_label_list_small = ["rock_small","rock_small","rock_small"]
-    createInstancerAndCache(stage, "/World/Rocks_small", assets_small, semantic_label_list_small)
+    # assets_small = ["/home/lunar4/jnskkmhr/omn_asset/rock_model/apollo-lunar-sample-1001715_USD/10017-15_SFM_Web-Resolution-Model_Coordinate-Registered.usd", 
+    #         "/home/lunar4/jnskkmhr/omn_asset/rock_model/apollo-lunar-sample-1201311_USD/12013-11_SFM_Web-Resolution-Model_Coordinate-Registered.usd", 
+    #         "/home/lunar4/jnskkmhr/omn_asset/rock_model/apollo-lunar-sample-700178_USD/70017-8_SFM_Web-Resolution-Model_Coordinate-Registered.usd"]
+    # semantic_label_list_small = ["rock_small","rock_small","rock_small"]
+
+    assets_small = ["/home/lunar4/jnskkmhr/omn_asset/rock_model/apollo-lunar-sample-143211404_USD/14321-1404_SFM_Web-Resolution-Model_Coordinate-Registered.usd", 
+            "/home/lunar4/jnskkmhr/omn_asset/rock_model/apollo-lunar-sample-606390_USD/60639-0_Web-Resolution_Coordinate-Registered.usd"]
+    semantic_label_list_small = ["rock_small","rock_small"]
+    createInstancerAndCache(stage, "/Rocks_small", assets_small, semantic_label_list_small)
+
+    assets_middle = ["/home/lunar4/jnskkmhr/omn_asset/rock_model/apollo-lunar-sample-143211404_USD/14321-1404_SFM_Web-Resolution-Model_Coordinate-Registered.usd", 
+            "/home/lunar4/jnskkmhr/omn_asset/rock_model/apollo-lunar-sample-606390_USD/60639-0_Web-Resolution_Coordinate-Registered.usd"]
+    semantic_label_list_middle = ["rock_middle","rock_middle"]
+    createInstancerAndCache(stage, "/Rocks_middle", assets_middle, semantic_label_list_middle)
 
     assets_large = ["/home/lunar4/jnskkmhr/omn_asset/rock_model/apollo-lunar-sample-143211404_USD/14321-1404_SFM_Web-Resolution-Model_Coordinate-Registered.usd", 
             "/home/lunar4/jnskkmhr/omn_asset/rock_model/apollo-lunar-sample-606390_USD/60639-0_Web-Resolution_Coordinate-Registered.usd"]
     semantic_label_list_large = ["rock_large","rock_large"]
-    createInstancerAndCache(stage, "/World/Rocks_large", assets_large, semantic_label_list_large)
+    createInstancerAndCache(stage, "/Rocks_large", assets_large, semantic_label_list_large)
 
     # load sample dem file
     # 1.5 m/pix
@@ -92,8 +101,10 @@ if __name__ == "__main__":
     magnitude = np.hypot(nx,ny) #slope norm (sqrt(slope_x^2 + slope_y^2))
     flat_rank = np.argsort(magnitude.reshape(-1), axis=0) #sort by magnitude
 
-    rank_min = 550 
-    rank_max = 570
+    # rank_min = 550 
+    # rank_max = 570
+    rank_min = 1000 
+    rank_max = 1020
     rank_id1 = random.randint(rank_min, rank_max)
 
     pos1_flat = flat_rank[rank_id1]
@@ -111,14 +122,22 @@ if __name__ == "__main__":
     # define camera at "/camera/Camera"
     camera = createCamera(
         stage=stage, 
-        prim_path="/World/camera", 
+        prim_path="/camera", 
         camera_name="Camera", 
         **camera_params["extrinsics"], 
         **camera_params["calibration"], 
         )
 
+    # robot prim
+    robot_xform, _ = createXform(stage, "/robot")
+    robot_xform = UsdGeom.Xformable(robot_xform)
+    setTranslate(robot_xform, Gf.Vec3d(camera_params["extrinsics"]["translation"]))
+    setRotateXYZ(robot_xform, (0.0, 0.0, 0.0))
+
     # setting of rock placement
     # create sampler of rocks
+
+    # small rocks
     std_x = 40.0
     std_y = 40.0
     std = (std_x, std_y)
@@ -141,8 +160,10 @@ if __name__ == "__main__":
     requests1 = [req_pos_xy1, req_pos_z1, req_ori1, req_scale1]
     mixer_1 = RequestMixer(requests1)
 
-    std_x = 200.0
-    std_y = 200.0
+
+    # middle sized rocks
+    std_x = 100.0
+    std_y = 100.0
     std = (std_x, std_y)
     scale_min = 5.0 
     scale_max = 8.0
@@ -164,34 +185,60 @@ if __name__ == "__main__":
     mixer_2 = RequestMixer(requests2)
 
 
+    # large rocks
+    std_x = 200.0
+    std_y = 200.0
+    std = (std_x, std_y)
+    scale_min = 25.0 
+    scale_max = 27.0
+    sampler3 = NormalSampler_T(mean=(pos1_flat_x, pos1_flat_y), std=std, randomization_space=2, seed=seed)
+    plane3 = Plane_T(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, output_space=2)
+    image_layer3 = Image_T(output_space=1)
+    image_clipper3 = ImageClipper_T(randomization_space=1, resolution=(H, W), mpp_resolution=mpp, data=data) #only z
+    normalmap_layer3 = NormalMap_T(output_space=4)
+    normalmap_clipper3 = NormalMapClipper_T(randomization_space=4, resolution=(H, W), mpp_resolution=mpp, data=data)
+    uni3 = UniformSampler_T(randomization_space=1)
+    line3 = Line_T(xmin=scale_min, xmax=scale_max)
+
+    req_pos_xy3 = UserRequest_T(p_type = Position_T(), sampler=sampler3, layer=plane3, axes=["x","y"])
+    req_pos_z3 = UserRequest_T(p_type = Position_T(), sampler=image_clipper3, layer=image_layer3, axes=["z"])
+    req_ori3 = UserRequest_T(p_type = Orientation_T(), sampler=normalmap_clipper3, layer=normalmap_layer3, axes=["x", "y", "z", "w"])
+    req_scale3 = UserRequest_T(p_type = Scale_T(), sampler=uni3, layer=line3, axes=["xyz"])
+    requests3 = [req_pos_xy3, req_pos_z3, req_ori3, req_scale3]
+    mixer_3 = RequestMixer(requests3)
+
+
     # pass all the attribute from mixer to instancer
-    num1 = 1300
+    num1 = 500
     attributes1 = mixer_1.executeGraph(num1)
     position1 = attributes1["xformOp:translation"]
     scale1 = attributes1["xformOp:scale"]
     orientation1 = attributes1["xformOp:orientation"]
 
-    setInstancerParameters(stage, "/World/Rocks_small", pos=position1, quat=orientation1, scale=scale1)
-    addCollision(stage, "/World/Rocks_small")
+    setInstancerParameters(stage, "/Rocks_small", pos=position1, quat=orientation1, scale=scale1)
+    addCollision(stage, "/Rocks_small")
 
-    num2 = 30
+    num2 = 50
     attributes2 = mixer_2.executeGraph(num2)
     position2 = attributes2["xformOp:translation"]
     scale2 = attributes2["xformOp:scale"]
     orientation2 = attributes2["xformOp:orientation"]
 
-    setInstancerParameters(stage, "/World/Rocks_large", pos=position2, quat=orientation2, scale=scale2)
-    addCollision(stage, "/World/Rocks_large")
+    setInstancerParameters(stage, "/Rocks_middle", pos=position2, quat=orientation2, scale=scale2)
+    addCollision(stage, "/Rocks_middle")
 
-    # position = np.concatenate([position1, position2], axis=0)
-    # scale = np.concatenate([scale1, scale2], axis=0)
-    # orientation = np.concatenate([orientation1, orientation2], axis=0)
+    num3 = 10
+    attributes3 = mixer_3.executeGraph(num3)
+    position3 = attributes3["xformOp:translation"]
+    scale3 = attributes3["xformOp:scale"]
+    orientation3 = attributes3["xformOp:orientation"]
 
-    # setInstancerParameters(stage, "/Rocks", pos=position, quat=orientation, scale=scale)
-    # addCollision(stage, "/Rocks")
+    setInstancerParameters(stage, "/Rocks_large", pos=position3, quat=orientation3, scale=scale3)
+    addCollision(stage, "/Rocks_large")
+
 
     viewport = get_active_viewport()
-    viewport.set_active_camera("/World/camera/Camera")
+    viewport.set_active_camera("/camera/Camera")
 
     save_path = os.path.join(root_dir, "Map/LRO_NAC_DEM_73N350E_150cmp_3500_4000_2000_2500_D435i_stage1.usd")
     asyncio.ensure_future(save_stage(stage, args.is_save, save_path))

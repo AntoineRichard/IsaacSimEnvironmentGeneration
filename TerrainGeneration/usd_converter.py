@@ -4,15 +4,15 @@ import omni
 import os
 from omni.isaac.kit import SimulationApp
 
-
 async def convert(in_file, out_file, load_materials=False):
     # This import causes conflicts when global
-    import omni.kit.asset_converter
+    # isaac-sim-2022-2-1 causes import error
+    import omni.kit.asset_converter as converter
 
     def progress_callback(progress, total_steps):
         pass
 
-    converter_context = omni.kit.asset_converter.AssetConverterContext()
+    converter_context = converter.AssetConverterContext()
     # setup converter and flags
     # converter_context.ignore_materials = not load_materials
     # converter_context.ignore_animation = False
@@ -25,7 +25,7 @@ async def convert(in_file, out_file, load_materials=False):
     converter_context.embed_textures = True
     converter_context.use_meter_as_world_unit = True
     # converter_context.create_world_as_default_root_prim = False
-    instance = omni.kit.asset_converter.get_instance()
+    instance = converter.get_instance()
     task = instance.create_converter_task(in_file, out_file, progress_callback, converter_context)
     success = True
     while True:
@@ -66,7 +66,6 @@ def asset_convert(folders, load_materials):
 
 if __name__ == "__main__":
     kit = SimulationApp()
-
     parser = argparse.ArgumentParser("Convert OBJ/STL assets to USD")
     parser.add_argument(
         "--folders", type=str, nargs="+", default=None, help="List of folders to convert (space seperated)."

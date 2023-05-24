@@ -3,3 +3,5 @@
 --folders $1 \
 --maps_path $2 \
 --tex_path /home/lunar4/jnskkmhr/omn_asset/Terrain/Textures/Sand.mdl
+# --tex_path /home/lunar4/jnskkmhr/omn_asset/Terrain/planet_surface_Normal-bl/PLSurface.mdl
+# --tex_path /home/lunar4/jnskkmhr/omn_asset/Terrain/Textures/Sand.mdl

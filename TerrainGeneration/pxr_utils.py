@@ -17,6 +17,9 @@ def newStage():
 def closeStage():
     omni.usd.get_context().close_stage()
 
+def setStageUnit(stage, unit):
+    UsdGeom.SetStageMetersPerUnit(stage, unit)
+
 def setDefaultPrim(stage, path):
     prim = stage.GetPrimAtPath(path)
     stage.SetDefaultPrim(prim)
