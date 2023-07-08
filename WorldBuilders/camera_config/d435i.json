@@ -1,10 +1,50 @@
 {
-    "calibration": {"focal_length": 1.88, 
-                    "fov": [69.4, 42.5],
-                    "focus_distance": 10.0, 
-                    "clipping_range": [0.0105, 10.0]
-                    },
-    "extrinsics": {"translation": [0.0, 0.0, 0.0], 
-                   "rotation": [80.0, 0.0, 0.0]
-                   }
+    "rgb":
+    {
+        "calibration": {"focal_length": 1.93, 
+                        "fx":382.613, 
+                        "fy":382.613,
+                        "height":480, 
+                        "width":640,
+                        "fov": [75.0, 62.0],
+                        "focus_distance": 100.0, 
+                        "clipping_range": [0.1, 100.0]
+                        },
+        "extrinsics": {"translation": [0.0, 0.0, 0.0], 
+                    "rotation": [80.0, 0.0, 0.0]
+                    }
+    }, 
+    "left":
+    {
+        "calibration": {"focal_length": 1.93, 
+                        "fx":382.613, 
+                        "fy":382.613,
+                        "height":480, 
+                        "width":640,
+                        "fov": [75.0, 62.0],
+                        "focus_distance": 100.0, 
+                        "clipping_range": [0.1, 100.0]
+                        },
+        "extrinsics": {"translation": [0.0, 0.0, 0.0], 
+                        "translation_local": [0.0, -0.005, 0.0],
+                        "rotation": [80.0, 0.0, 0.0]
+                        }
+    }, 
+    "right":
+    {
+        "calibration": {"focal_length": 1.93, 
+                        "fx":382.613, 
+                        "fy":382.613,
+                        "height":480, 
+                        "width":640,
+                        "fov": [75.0, 62.0],
+                        "focus_distance": 100.0, 
+                        "clipping_range": [0.1, 100.0]
+                        },
+        "extrinsics": {"translation": [0.0, 0.0, 0.0], 
+                        "translation_local": [0.0, 0.005, 0.0],
+                        "rotation": [80.0, 0.0, 0.0]
+                        }
+    }
+
 }

@@ -30,7 +30,7 @@ def createXform(stage, path):
     obj_prim = stage.DefinePrim(prim_path, "Xform")
     return obj_prim, prim_path
 
-def createCamera(stage, prim_path, camera_name, translation, rotation, focal_length, focus_distance, clipping_range, fov):
+def createCamera(stage, prim_path, camera_name, translation, rotation, focal_length, focus_distance, clipping_range, fov, fx, fy, height, width):
     """
     focal_length : in mm
     focus_distance : in m (world unit)
@@ -48,13 +48,41 @@ def createCamera(stage, prim_path, camera_name, translation, rotation, focal_len
     camera.GetFocalLengthAttr().Set(focal_length)
     camera.GetFocusDistanceAttr().Set(focus_distance)
     camera.GetClippingRangeAttr().Set(Gf.Vec2d(clipping_range))
-    horizontal_apeture = 2 * focal_length * np.tan(0.5 * np.deg2rad(fov[0])) # in mm
-    vertical_apeture = 2 * focal_length * np.tan(0.5 * np.deg2rad(fov[1])) # in mm
+    horizontal_apeture = width*focal_length/fx # in mm
+    vertical_apeture = height*focal_length/fy # in mm
     camera.GetHorizontalApertureAttr().Set(horizontal_apeture)
     camera.GetVerticalApertureAttr().Set(vertical_apeture)
     # Set camera transform
     camera = UsdGeom.Xformable(camera)
     setTranslate(camera, (0.0, 0.0, 0.0))
+    setRotateXYZ(camera, Gf.Vec3d(rotation))
+    return camera
+
+def createStereoCamera(stage, prim_path, camera_name, translation, translation_local, rotation, focal_length, focus_distance, clipping_range, fov, fx, fy, height, width):
+    """
+    focal_length : in mm
+    focus_distance : in m (world unit)
+    clipping_range : [min distance, max distance] in m (world unit)
+    fov : [horizontal, vertical] in degree
+    """
+    camera_parent, _ = createXform(stage, prim_path)
+    # camera_parent = stage.GetPrimAtPath(prim_path)
+    camera_parent = UsdGeom.Xformable(camera_parent)
+    setTranslate(camera_parent, Gf.Vec3d(translation))
+    setRotateXYZ(camera_parent, (0.0, 0.0, 0.0))
+
+    camera = UsdGeom.Camera.Define(stage, os.path.join(prim_path, camera_name))
+    # Set camera parameters
+    camera.GetFocalLengthAttr().Set(focal_length)
+    camera.GetFocusDistanceAttr().Set(focus_distance)
+    camera.GetClippingRangeAttr().Set(Gf.Vec2d(clipping_range))
+    horizontal_apeture = width*focal_length/fx # in mm
+    vertical_apeture = height*focal_length/fy # in mm
+    camera.GetHorizontalApertureAttr().Set(horizontal_apeture)
+    camera.GetVerticalApertureAttr().Set(vertical_apeture)
+    # Set camera transform
+    camera = UsdGeom.Xformable(camera)
+    setTranslate(camera, Gf.Vec3d(translation_local))
     setRotateXYZ(camera, Gf.Vec3d(rotation))
     return camera
 
@@ -115,7 +143,7 @@ def createStandaloneInstance(stage, path):
     instancer = UsdGeom.PointInstancer.Define(stage, path)
     return instancer
 
-def createInstancerAndCache(stage, path, asset_list, semantic_label_list):
+def createInstancerAndCache(stage, path, asset_list, semantic_label_list, add_collision=False):
     # Creates a point instancer
     instancer = createStandaloneInstance(stage, path)
     # Creates a Xform to cache the assets to.
@@ -125,6 +153,9 @@ def createInstancerAndCache(stage, path, asset_list, semantic_label_list):
     for i, asset in enumerate(asset_list):
         # Create asset.
         prim, prim_path = createObject(os.path.join(path,'cache','instance'), stage, asset, semantic_label=semantic_label_list[i])
+        # add collision to source prim to which instancer makes reference
+        if add_collision:
+            addCollision(stage, prim_path)
         # Add this asset to the list of instantiable objects.
         instancer.GetPrototypesRel().AddTarget(prim_path)
     # Set some dummy parameters
