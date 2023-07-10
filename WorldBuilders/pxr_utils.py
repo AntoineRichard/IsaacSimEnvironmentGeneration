@@ -5,6 +5,7 @@ from pxr import UsdGeom, Gf, Sdf, UsdPhysics, UsdShade, Usd, Vt
 from pxr.Gf import Camera
 from omni.isaac.core.utils.semantics import add_update_semantics
 from omni.physx.scripts import utils
+from omni.isaac.core.utils.transformations import get_relative_transform
 
 def loadStage(path: str):
     omni.usd.get_context().open_stage(path)
@@ -182,6 +183,39 @@ def setInstancerParameters(stage, path, pos, ids = None, scale = None, quat = No
     # Compute extent.
     instancer_prim.GetAttribute("protoIndices").Set(ids)
     updateExtent(stage, path)
+
+def setInstancerVisibilityFromFrustrum(stage, instancer_path, camera_path):
+    instancer_prim = stage.GetPrimAtPath(instancer_path)
+    camera_prim = stage.GetPrimAtPath(camera_path)
+    root_prim = stage.GetPrimAtPath(instancer_path)
+    # Get position of instancer
+    instancer_pos = np.array(instancer_prim.GetAttribute("positions").Get())
+    # Get pose of camera
+    global2camera_transform = get_relative_transform(root_prim, camera_prim) # camera2global matrix
+    # transform instancer position to camera frame
+    instancer_pos_cam = (global2camera_transform @ np.concatenate([instancer_pos, np.ones((instancer_pos.shape[0],1))], axis=1).T).T[:,:3]
+    # get depth, roll, and yaw of each instancer
+    # camera is in opencv-style coordinate system + 180 deg rotated around y-axis
+    depth = np.linalg.norm(instancer_pos_cam, axis=1)
+    roll = np.arctan2(-instancer_pos_cam[:,0], -instancer_pos_cam[:,2])
+    yaw = np.arctan2(instancer_pos_cam[:,1], -instancer_pos_cam[:,2])
+    # filter out instancers that are outside of camera frusrum
+    # depth_min, depth_max = camera_prim.GetClippingRangeAttr().Get()
+    depth_min = 0.1
+    depth_max = 100.0
+    sensor_width = 3.60
+    sensor_height = 2.70
+    focal_length = 1.93
+    hfov = 2*np.arctan2(sensor_width/2, focal_length)
+    vfov = 2*np.arctan2(sensor_height/2, focal_length)
+    roll_boundary = 1.5 * vfov/2
+    yaw_boundary = 1.5 * hfov/2
+    # binary_mask = np.where((depth >= depth_min) & (depth <= depth_max), 1, 0)
+    binary_mask = np.where((depth >= depth_min) & (depth <= depth_max) & \
+                           (np.abs(roll) <= roll_boundary) & (np.abs(yaw) <= yaw_boundary), 1, 0)
+    inactive_ids = Vt.Int64Array.FromNumpy(np.argwhere(binary_mask == 0).flatten().astype(np.int64))
+    # set inactive ids
+    instancer_prim.GetAttribute("invisibleIds").Set(inactive_ids)
     
 def updateExtent(stage, instancer_path):
     # Get the point instancer.

@@ -155,8 +155,4 @@ class RequestMixer:
             remapped = [current_order.index(i) for i in range(len(current_order))]
             points = np.stack([points[:,i] for i in remapped]).T
             output[attribute] = points
-        # print(type(output['xformOp:translation']))
-        # print(output['xformOp:translation'].shape)
-        # print(output['xformOp:translation'])
-        # print(output['xformOp:orientation'])
         return output

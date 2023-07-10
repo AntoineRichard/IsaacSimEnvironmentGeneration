@@ -1,0 +1,41 @@
+{
+    "D435i_VGA":
+        {"rgb":
+            {
+                "calibration": {"focal_length": 1.93,
+                                "height":480, 
+                                "width":640,
+                                "sensor_height":2.70, 
+                                "sensor_width":3.60,
+                                "fov": [75.0, 62.0],
+                                "focus_distance": 100.0, 
+                                "clipping_range": [0.1, 100.0]
+                                }
+            }, 
+            "left":
+            {
+                "calibration": {"focal_length": 1.93,
+                                "height":480, 
+                                "width":640,
+                                "sensor_height":2.70, 
+                                "sensor_width":3.60,
+                                "fov": [75.0, 62.0],
+                                "focus_distance": 100.0, 
+                                "clipping_range": [0.1, 100.0]
+                                }
+            }, 
+            "right":
+            {
+                "calibration": {"focal_length": 1.93,
+                                "height":480, 
+                                "width":640,
+                                "sensor_height":2.70, 
+                                "sensor_width":3.60,
+                                "fov": [75.0, 62.0],
+                                "focus_distance": 100.0, 
+                                "clipping_range": [0.1, 100.0]
+                                }
+            }
+        }
+
+}
