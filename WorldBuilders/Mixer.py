@@ -1,6 +1,7 @@
 from Types import *
 from Layers import *
 from Samplers import *
+from Clippers import *
 
 import copy
 
@@ -8,8 +9,11 @@ class MetaLayer:
     def __init__(self, layer_cfg: Layer_T, sampler_cfg: Sampler_T) -> None:
        self.layer = Layer_Factory.get(layer_cfg, sampler_cfg)
 
-    def __call__(self, num=1, **kwargs) -> np.ndarray([]):
-        return self.layer(num, **kwargs)
+    def __call__(self, num=1, query_point=None, **kwargs) -> np.ndarray([]):
+        if query_point is not None:
+            return self.layer(query_point=query_point, num=num, **kwargs)
+        else:
+            return self.layer(num, **kwargs)
 
 class RequestMixer:
     def __init__(self, requests: tuple()) -> None:
@@ -24,7 +28,7 @@ class RequestMixer:
 
 
     def parseRequests(self):
-        # Take all the requests and sort them by parameters
+        # Take all the requests and sort them by parameters(Position_T, Scale_T, Orientation_T)
         requests_per_type = {}
         for req in self.requests:
             if req.p_type.name in requests_per_type.keys():
@@ -33,6 +37,8 @@ class RequestMixer:
                 requests_per_type[req.p_type.name] = [req]
         # For each requested parameter type, check for axes errors
         point_processes = 0
+        self.height_clip_id = None #initialize clip function flag
+        self.orient_clip_id = None
         for reqs_key in requests_per_type.keys():
             axes = []
             for i, req in enumerate(requests_per_type[reqs_key]):
@@ -42,6 +48,12 @@ class RequestMixer:
                     self.has_point_process = True
                     self.point_process_attr = req.p_type.attribute_name
                     point_process_idx = i
+                if isinstance(req.sampler, ImageClipper_T):
+                    # raise flag when image clipper is processed
+                    self.height_clip_id = i
+                if isinstance(req.sampler, NormalMapClipper_T):
+                    # raise flag when normalmap clipper is processed
+                    self.orient_clip_id = i
                 for axis in "".join(req.axes):
                     axes.append(axis)
                 # Check that the dimension of the layer matches the one of the axes.
@@ -55,8 +67,21 @@ class RequestMixer:
         self.requests_per_type = requests_per_type
 
     def buildExecutionGraph(self):
+        """
+        return
+        self.execution_graph:dict : 
+        {
+            "attribute1": [request1, request2, ...]
+            "attribute2": [request1, request2, ...]
+            "attribute3": [request1, request2, ...]
+        }
+        for example, 
+        attribute1 = xformOp:translation, 
+        attribute2 = xformOp:scale
+        attribute3 = xformOp:orientation
+        """
         self.execution_graph = {}
-        for req_type in self.requests_per_type.keys():
+        for req_type in self.requests_per_type.keys(): #attribute loop
             attribute_name = self.requests_per_type[req_type][0].p_type.attribute_name
             to_exec = {}
             to_exec["meta_layer"] = []
@@ -64,7 +89,7 @@ class RequestMixer:
             to_exec["order"] = []
             to_exec["axes"] = []
             specified_axes = []
-            for j, req in enumerate(self.requests_per_type[req_type]):
+            for j, req in enumerate(self.requests_per_type[req_type]): #axis loop
                 to_exec["meta_layer"].append(MetaLayer(req.layer, req.sampler))
                 to_exec["replicate"].append(np.repeat(list(range(len(req.axes))), [len(i) for i in req.axes]))
                 to_exec["order"].append([req.p_type.index_mapping[axis] for axis in "".join(req.axes)])
@@ -87,7 +112,6 @@ class RequestMixer:
 
     def executeGraph(self, num):
         output = {}
-
         attributes = self.execution_graph
         if self.point_process_attr is not None:
             tmp = [self.point_process_attr]
@@ -97,18 +121,36 @@ class RequestMixer:
             attributes = tmp
 
         is_first = True
+        query_points = None
+        points = None
         for attribute in attributes:
             current_order = []
             to_exec = self.execution_graph[attribute]
             p_list = []
             for j in range(len(to_exec["meta_layer"])):
-                points = to_exec["meta_layer"][j](num)
-                points = np.stack([points[:,i] for i in to_exec["replicate"][j]]).T
-                current_order += to_exec["order"][j]
-                p_list.append(points)
-                if self.has_point_process and is_first:
-                    num = points.shape[0]
-                    is_first = False
+                if attribute == "xformOp:translation" and j == self.height_clip_id: #set z value DEM(x, y)
+                    assert points is not None, "height clip must be called after sampling x, y position"
+                    assert points.shape[-1] == 2, "2 dimensional vector is only allowed as an query point"
+                    query_points = copy.deepcopy(points) #store sampled x, y 
+                    points = to_exec["meta_layer"][j](query_point=query_points, num=num) #"sample" method of image clipper is called here.
+                    points = np.stack([points[:,i] for i in to_exec["replicate"][j]]).T
+                    current_order += to_exec["order"][j]
+                    p_list.append(points)
+                elif attribute == "xformOp:orientation" and j == self.orient_clip_id:
+                    assert query_points is not None, "orientation clip must be called after sampling x, y position"
+                    assert query_points.shape[-1] == 2, "2 dimensional vector is only allowed as an query point"
+                    points = to_exec["meta_layer"][j](query_point=query_points, num=num) #"sample" method of normalmap clipper is called here.
+                    points = np.stack([points[:,i] for i in to_exec["replicate"][j]]).T
+                    current_order += to_exec["order"][j]
+                    p_list.append(points)
+                else: 
+                    points = to_exec["meta_layer"][j](num) #"sample" method of sampler is called here.
+                    points = np.stack([points[:,i] for i in to_exec["replicate"][j]]).T
+                    current_order += to_exec["order"][j]
+                    p_list.append(points)
+                    if self.has_point_process and is_first:
+                        num = points.shape[0]
+                        is_first = False
             points = np.concatenate(p_list,axis=-1)
             remapped = [current_order.index(i) for i in range(len(current_order))]
             points = np.stack([points[:,i] for i in remapped]).T

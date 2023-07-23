@@ -311,13 +311,17 @@ class Torus_T(Layer_T):
         assert self.radius2_min > 0, "The minimal radius must be larger than 0."
         assert self.radius2_max > self.radius2_min, "The maximum radius must be larger than the minimum radius."
 
-#@dataclasses.dataclass
-#class Image_T(Layer_T):
-#    resolution: tuple = (1,1)
-#    path: str = None
-#    data: np.ndarray([]) = None
-#    func: function = lambda x: x
-#    output_space: int = 2
+@dataclasses.dataclass
+class Image_T(Layer_T):
+    """
+    No information needs to be passed
+    """
+
+@dataclasses.dataclass
+class NormalMap_T(Layer_T):
+    """
+    No information needs to be passed
+    """
 
 #@dataclasses.dataclass
 #class Mask_T(Layer_T):
@@ -461,13 +465,27 @@ class LinearInterpolationSampler_T(Sampler_T):
         assert type(self.min) is tuple, "min must be a tuple."
         assert type(self.max) is tuple, "max must be a tuple."
 
-#@dataclasses.dataclass
-#class ImageSampler_T(Sampler_T):
-#    func: function = lambda x: x
+@dataclasses.dataclass
+class ImageClipper_T(Sampler_T):
+    """
+    resolution : pixel resolution
+    mpp_resolutin : meter per pixel resolution
+    data : Image in numpy ndarray
+    """
+    resolution: tuple = (1, 1)
+    mpp_resolution: float = 1.0
+    data: np.ndarray([]) = None
 
-#@dataclasses.dataclass
-#class NormalMapSampler_T(Sampler_T):
-#    func: function = lambda x:x
+@dataclasses.dataclass
+class NormalMapClipper_T(Sampler_T):
+    """
+    resolution : pixel resolution
+    mpp_resolutin : meter per pixel resolution
+    data : Gradient map in numpy ndarray
+    """
+    resolution: tuple = (1, 1)
+    mpp_resolution: float = 1.0
+    data: np.ndarray([]) = None
 
 ##################################
 #                                #

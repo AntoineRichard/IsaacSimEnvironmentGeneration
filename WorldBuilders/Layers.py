@@ -1,7 +1,10 @@
 import numpy as np
 from Types import *
 from Samplers import *
+from Clippers import *
 import copy
+
+CLIPPER_CFG = ["Image_T", "NormalMap_T"]
 
 class BaseLayer:
     def __init__(self, layer_cfg: Layer_T, sampler_cfg: Sampler_T, **kwarg) -> None:
@@ -31,7 +34,12 @@ class BaseLayer:
         self.getBounds()
 
     def initializeSampler(self) -> None:
-        self._sampler = Sampler_Factory.get(self._sampler_cfg)
+        # TODO: might need to implement in smarter way
+        # How to clarrify clipper or sampler ? 
+        if self._layer_cfg.__class__.__name__ in CLIPPER_CFG:
+            self._sampler = Clipper_Factory.get(self._sampler_cfg)
+        else:
+            self._sampler = Sampler_Factory.get(self._sampler_cfg)
 
     def getBounds(self) -> None:
         raise NotImplementedError()
@@ -142,6 +150,44 @@ class Layer3D(BaseLayer):
 class Layer4D(BaseLayer):
     def __init__(self, output_space: Layer_T, sampler_cfg: Sampler_T) -> None:
         super().__init__(output_space, sampler_cfg)
+
+class ImageLayer(Layer1D):
+    """
+    Class which is similar with LineLayer
+    But, do not specify bound, since the bound is determined by height image.
+    """
+    def __init__(self, layer_cfg: Layer_T, sampler_cfg: Sampler_T) -> None:
+        super().__init__(layer_cfg, sampler_cfg)
+        self.initializeSampler()
+    
+    def getBounds(self):
+        self._bounds = None
+
+    def sample(self, query_point: np.ndarray, num: int = 1):
+        return self._sampler(num=num, bounds=self._bounds, query_point=query_point)
+    
+    def __call__(self, query_point: np.ndarray, num: int = 1) -> np.ndarray([]):
+        points = self.sample(num = num, query_point=query_point)
+        points = self.project(points)
+        points = self.transform(points)
+        return points
+
+class NormalMapLayer(Layer4D):
+    def __init__(self, layer_cfg: Layer_T, sampler_cfg: Sampler_T) -> None:
+        super().__init__(layer_cfg, sampler_cfg)
+        self.initializeSampler()
+    
+    def getBounds(self):
+        self._bounds = None
+
+    def sample(self, query_point: np.ndarray, num: int = 1):
+        return self._sampler(num=num, bounds=self._bounds, query_point=query_point)
+    
+    def __call__(self, query_point: np.ndarray, num: int = 1) -> np.ndarray([]):
+        points = self.sample(num = num, query_point=query_point)
+        points = self.project(points)
+        points = self.transform(points)
+        return points
 
 class LineLayer(Layer1D):
     def __init__(self, layer_cfg: Line_T, sampler_cfg: Sampler_T) -> None:
@@ -556,6 +602,8 @@ Layer_Factory.register("Sphere_T", SphereLayer)
 Layer_Factory.register("Cylinder_T", CylinderLayer)
 Layer_Factory.register("Cone_T", ConeLayer)
 Layer_Factory.register("Torus_T", TorusLayer)
+Layer_Factory.register("Image_T", ImageLayer)
+Layer_Factory.register("NormalMap_T", NormalMapLayer)
 
 
 #class Spline(Layer1D):
@@ -583,4 +631,3 @@ Layer_Factory.register("Torus_T", TorusLayer)
 #class Quaternion(Layer4D):
 #    def __init__(self) -> None:
 #        super().__init__()
-
