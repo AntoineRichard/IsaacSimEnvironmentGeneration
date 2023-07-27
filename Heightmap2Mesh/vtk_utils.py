@@ -1,6 +1,7 @@
 from vtk.util import numpy_support
 import numpy as np
 import vtk
+import cv2
 
 def makeVTKPlane(p: tuple, normal: tuple) -> vtk.vtkPlane:
     """
@@ -102,7 +103,7 @@ def array2VTKImage(image: np.ndarray) -> vtk.vtkImageData:
     vtk_image.GetPointData().GetScalars().DeepCopy(vtk_array)
     return vtk_image
 
-def makeDebugTexture() -> vtk.vtkImageData:
+def makeDebugTexture(rxmax=1,rymax=1) -> vtk.vtkImageData:
     """
     Creates a texture that can be used to debug the generated meshes.
     Outputs:
@@ -129,9 +130,14 @@ def makeDebugTexture() -> vtk.vtkImageData:
     drawCross(tex, 10, np.array([115,3,191]))
     drawborder(tex, 10, np.array([115,3,191]))
     drawborder(tex, 2, np.array([2,0,31]))
+
     for i in range(250):
         if i%2==0:
             tex[i] = tex[i] // 2
+
+    sx = int(tex.shape[0]*rxmax)
+    sy = int(tex.shape[1]*rymax)
+    tex = tex[:sy,:sx]
     image = array2VTKImage(tex)
     return image
 
@@ -154,7 +160,7 @@ def objWriter(polydata: vtk.vtkPolyData, save_path: str, image: vtk.vtkImageData
         obj_writer.SetInputData(1, image)
     obj_writer.Write()
 
-def objExporter(polydata: vtk.vtkPolyData, save_path: str, image: vtk.vtkImageData = None) -> None:
+def objExporter(polydata: vtk.vtkPolyData, save_path: str, image: vtk.vtkImageData = None, size:float = None) -> None:
     """
     Saves a mesh as an OBJ file. Unlike objWriter, this methods generates UVs.
 
@@ -167,9 +173,14 @@ def objExporter(polydata: vtk.vtkPolyData, save_path: str, image: vtk.vtkImageDa
     bounds = polydata.GetBounds()
     map_to_plane = vtk.vtkTextureMapToPlane()
     map_to_plane.SetInputData(polydata)
-    map_to_plane.SetOrigin(0, 0, 0)
-    map_to_plane.SetPoint1(bounds[1], 0, 0)
-    map_to_plane.SetPoint2(0, bounds[3], 0)
+    if not size is None:
+        map_to_plane.SetOrigin(0, 0, 0)
+        map_to_plane.SetPoint1(size, 0, 0)
+        map_to_plane.SetPoint2(0, size, 0)
+    else:
+        map_to_plane.SetOrigin(0, 0, 0)
+        map_to_plane.SetPoint1(bounds[1], 0, 0)
+        map_to_plane.SetPoint2(0, bounds[3], 0)
     # Applies the UV map to a mapper
     mapper = vtk.vtkPolyDataMapper()
     mapper.SetInputConnection(map_to_plane.GetOutputPort())
