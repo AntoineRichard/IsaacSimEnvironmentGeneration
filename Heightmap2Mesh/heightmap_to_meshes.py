@@ -56,7 +56,7 @@ class HM2Mesh:
         Inputs:
             hmap (np.ndarray): the heightmap.
         """
-        return (hmap - hmap.min()) * self.z_scale
+        return hmap * self.z_scale
 
     def rescale_xy(self, polydata:vtk.vtkPolyData) -> vtk.vtkPolyData:
         """
@@ -108,7 +108,7 @@ class HM2Mesh:
             warnings.warn("Loading non floating point map.")
         if (heightmap.dtype == np.uint8):
              warnings.warn("Loading uint8 map is not recommended. The quality of the generated mesh is going to be low.")
-        return heightmap
+        return np.swapaxes(heightmap,0,1)
 
     def readTexture(self) -> np.ndarray:
         """
@@ -132,7 +132,7 @@ class HM2Mesh:
         if (len(texture.shape) > 3):
             raise ValueError("The texture dimmension is too large: "+str(len(texture.shape))+", expected 3.")
         # No data-type check.
-        return texture#np.swapaxes(texture,0,1)
+        return np.swapaxes(texture,0,1)
     
     def generateHeightmap(self, image: vtk.vtkImageData) -> vtk.vtkPolyData:
         """

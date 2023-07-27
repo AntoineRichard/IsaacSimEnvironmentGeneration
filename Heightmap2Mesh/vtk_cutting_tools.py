@@ -50,7 +50,7 @@ def clearOffset(poly: vtk.vtkPolyData) -> vtk.vtkPolyData:
     filter.Update()
     return filter.GetOutput() 
 
-def save(polydata: vtk.vtkPolyData, save_path: str, save_extension: str, generate_uvs: bool, tex: vtk.vtkTexture = None) -> None:
+def save(polydata: vtk.vtkPolyData, save_path: str, save_extension: str, generate_uvs: bool, tex: vtk.vtkTexture = None, size:float = None) -> None:
     """
     Saves a mesh given a set of parameters. For instance, "save extension" allows to choose between "STL" or "OBJ" format.
     If the "OBJ" format is selected, but no texture is provided, then the function will default to a debug texture.
@@ -70,7 +70,7 @@ def save(polydata: vtk.vtkPolyData, save_path: str, save_extension: str, generat
         if tex is None:
             tex = vtk_utils.makeDebugTexture()
         if generate_uvs:
-            vtk_utils.objExporter(polydata, save_path, tex)
+            vtk_utils.objExporter(polydata, save_path, tex, size=size)
         else:
             vtk_utils.objWriter(polydata, save_path, tex)
     else:
@@ -107,6 +107,9 @@ def cut(polydata: vtk.vtkPolyData, path: str, size: float = 50, tex: np.ndarray 
         tex_res_y = tex.shape[1]
         tex_res_x_r = 1.0*tex_res_x/poly_max_x
         tex_res_y_r = 1.0*tex_res_y/poly_max_y
+    else:
+        tex_res_x_r = None
+        tex_res_y_r = None
 
     it = 0
     size = int(size)
@@ -116,27 +119,62 @@ def cut(polydata: vtk.vtkPolyData, path: str, size: float = 50, tex: np.ndarray 
         tmp = applyCut(plane, polydata) # left side of the mesh (a strip).
         # We just got a strip that we are going to cut into cubes.
         for j in range(size, poly_max_y + size, size):
-            plane = vtk_utils.makeVTKPlane((j*1.0,0,0),(-1,0,0))
-            output = applyCut(plane, tmp) # a cube (ready to be saved).
-            plane = vtk_utils.makeVTKPlane((j*1.0,0,0),(1,0,0))
-            tmp = applyCut(plane, tmp) # a strip (that has to be sliced).
-            # Get the bounds and check the z deviation.
-            Bounds = output.GetBounds()
-            # If the deviation is small, then replace the mesh by a flat surface.
-            if np.abs(Bounds[-1] - Bounds[-2]) < 0.15:
-                output = vtk_utils.makeFlatSurface(j-size,i-size,np.mean([Bounds[-1],Bounds[-2]]),(np.min([Bounds[1]-Bounds[0],size]),np.min([Bounds[3]-Bounds[2],size])))
-            # Remove the xy offset, to make the object origin (0,0,z).
-            output = clearOffset(output)
-            # Cut the textute if one is provided.
-            if not tex is None:
-                chunk_tex = tex[int((i-size)*tex_res_x_r):int(i*tex_res_x_r),int((j - size)*tex_res_y_r):int(j*tex_res_y_r)]
-                chunk_tex = vtk_utils.array2VTKImage(chunk_tex)
-                save(output, os.path.join(path,'map_'+str(i-size)+'_'+str(j-size)), save_extension, generate_uvs, tex=chunk_tex)
-            else:
-                save(output, os.path.join(path,'map_'+str(i-size)+'_'+str(j-size)), save_extension, generate_uvs, tex=tex)
+            output = cutAndGetTop(tmp, j)
+            tmp = cutAndGetBottom(tmp, j)
+            output = cleanBlock(output, size,[i-size, j-size])
+            saveBlock(output, tex, [i-size, j-size], path, size, [tex_res_x_r, tex_res_y_r], save_extension, generate_uvs)
             if it%250 == 0:
             	print(it,"parts generated.")
             it += 1
+        output = cleanBlock(tmp, size, [i-size, j])
+        saveBlock(output, tex, [i-size, j], path, size, [tex_res_x_r, tex_res_y_r], save_extension, generate_uvs)
+        if it%250 == 0:
+        	print(it,"parts generated.")
+        it += 1
         # Cut and get right side of the mesh 
         plane = vtk_utils.makeVTKPlane((0,i,0),(0,1,0))
         polydata = applyCut(plane, polydata)
+    tmp = polydata
+    # We just got a strip that we are going to cut into cubes.
+    for j in range(size, poly_max_y + size, size):
+        output = cutAndGetTop(tmp, j)
+        tmp = cutAndGetBottom(tmp, j)
+        output = cleanBlock(output, size, [i, j-size])
+        saveBlock(output, tex, [i, j-size], path, size, [tex_res_x_r, tex_res_y_r], save_extension, generate_uvs)
+        if it%250 == 0:
+        	print(it,"parts generated.")
+        it += 1
+    output = cleanBlock(tmp, size, [i, j])
+    saveBlock(output, tex, [i, j], path, size, [tex_res_x_r, tex_res_y_r], save_extension, generate_uvs)
+    if it%250 == 0:
+    	print(it,"parts generated.")
+    it += 1
+
+def cutAndGetTop(polydata: vtk.vtkPolyData, position: float) -> vtk.vtkPolyData: 
+    plane = vtk_utils.makeVTKPlane((position*1.0,0,0),(-1,0,0))
+    return applyCut(plane, polydata) # a cube (ready to be saved).
+
+def cutAndGetBottom(polydata: vtk.vtkPolyData, position: float) -> vtk.vtkPolyData: 
+    plane = vtk_utils.makeVTKPlane((position*1.0,0,0),(1,0,0))
+    return applyCut(plane, polydata) # a strip (that has to be sliced).
+
+def cleanBlock(polydata, size, position):
+    Bounds = polydata.GetBounds()
+    # If the deviation is small, then replace the mesh by a flat surface.
+    if np.abs(Bounds[-1] - Bounds[-2]) < 0.0015:
+        polydata = vtk_utils.makeFlatSurface(position[1],position[0],np.mean([Bounds[-1],Bounds[-2]]),(np.min([Bounds[1]-Bounds[0],size]),np.min([Bounds[3]-Bounds[2],size])))
+    # Remove the xy offset, to make the object origin (0,0,z).
+    return clearOffset(polydata)
+
+def saveBlock(polydata, tex, position, path, size, tex_res, save_extension, generate_uvs):
+    # Cut the textute if one is provided.
+    Bounds = polydata.GetBounds()
+    if not tex is None:
+        chunk_tex = tex[int((position[0])*tex_res[0]):int((position+size)*tex_res[0]),int((position[1])*tex_res[1]):int((position+size)*tex_res[1])]
+        chunk_tex = vtk_utils.array2VTKImage(chunk_tex)
+        save(polydata, os.path.join(path,'map_'+str(position[0])+'_'+str(position[1])), save_extension, generate_uvs, tex=chunk_tex, size=size)
+    else:
+        rx = (Bounds[1]-Bounds[0])/size
+        ry = (Bounds[3]-Bounds[2])/size
+        tex = vtk_utils.makeDebugTexture()
+        save(polydata, os.path.join(path,'map_'+str(position[0])+'_'+str(position[1])), save_extension, generate_uvs, tex=tex, size=size)
