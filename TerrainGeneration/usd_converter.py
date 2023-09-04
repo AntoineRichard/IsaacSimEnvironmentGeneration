@@ -8,7 +8,6 @@ from omni.isaac.kit import SimulationApp
 async def convert(in_file, out_file, load_materials=False):
     # This import causes conflicts when global
     import omni.kit.asset_converter
-
     def progress_callback(progress, total_steps):
         pass
 
@@ -65,6 +64,9 @@ def asset_convert(folders, load_materials):
 
 if __name__ == "__main__":
     kit = SimulationApp()
+
+    from omni.isaac.core.utils.extensions import enable_extension
+    enable_extension("omni.kit.asset_converter")
 
     parser = argparse.ArgumentParser("Convert OBJ/STL assets to USD")
     parser.add_argument(
