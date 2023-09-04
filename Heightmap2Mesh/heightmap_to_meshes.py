@@ -56,7 +56,8 @@ class HM2Mesh:
         Inputs:
             hmap (np.ndarray): the heightmap.
         """
-        return hmap * self.z_scale
+        self.z_offset = hmap.min()*self.z_scale
+        return (hmap * self.z_scale) - self.z_offset
 
     def rescale_xy(self, polydata:vtk.vtkPolyData) -> vtk.vtkPolyData:
         """
@@ -76,6 +77,26 @@ class HM2Mesh:
         transformFilter.Update()
         r_polydata = transformFilter.GetOutput()
         return r_polydata
+    
+    def undo_z_offset(self, polydata:vtk.vtkPolyData) -> vtk.vtkPolyData:
+        """
+        Undo the offset applied in rescale_z function
+        Inputs:
+            polydata (vtk.vtkPolyData): The mesh to be rescaled.
+        Outputs:
+            r_polydata (vtk.vtkPolyData): The un z offseted mesh.
+        """
+        offset = (0,0,self.z_offset)
+        transform = vtk.vtkTransform()
+        transform.Translate(offset)
+        transformFilter = vtk.vtkTransformPolyDataFilter()
+        transformFilter.SetInputData(polydata)
+        transformFilter.SetTransform(transform)
+        transformFilter.Update()
+        r_polydata = transformFilter.GetOutput()
+        return r_polydata
+
+
 
     def readHeightMap(self) -> np.ndarray:
         """
@@ -171,6 +192,7 @@ class HM2Mesh:
             tex = vtk_utils.makeDebugTexture()
         polydata = self.generateHeightmap(hmap)
         polydata = self.rescale_xy(polydata)
+        polydata = self.undo_z_offset(polydata)
         if self.save_extension.lower() == "stl":
             vtk_utils.stlWriter(polydata, save_path=self.save_path)
         elif self.save_extension.lower() == "obj":
