@@ -29,7 +29,7 @@ def assembleMap(folder, output_path, terrain_root = "/terrain", texture_path="..
 def processFolders(folders, map_path):
     for folder in folders:
         assert os.path.exists(folder), "Path to folder: "+folder+" does not exist. Please correct it."
-        name = folder.split("/")[-1]
+        name = folder.split("/")[-1].split(".")[0]
         assembleMap(folder, output_path=os.path.join(map_path,name+".usd"))
         
 
